@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<XMLDB PATH="blocks/credits/db" VERSION="20230917" COMMENT="XMLDB file for Moodle blocks/credits"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
+>
+  <TABLES>
+    <TABLE NAME="block_credits" COMMENT="Default comment for block_credits, please edit me">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="total" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The total number of credits."/>
+        <FIELD NAME="remaining" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The number of remaining credits."/>
+        <FIELD NAME="used" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The number of credits used."/>
+        <FIELD NAME="expired" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The number of credits expired."/>
+        <FIELD NAME="creditedon" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The UNIX timestamp at which the credits were credited."/>
+        <FIELD NAME="validuntil" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The UNIX timestamp until which credits are valid for."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="block_credits_tx" COMMENT="History of all transactions of a person's credits.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="creditid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="actinguserid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The user ID who initiated the transaction."/>
+        <FIELD NAME="amount" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The number of credits. A negative number represents a debit."/>
+        <FIELD NAME="component" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="The component responsible for the transaction."/>
+        <FIELD NAME="reasoncode" TYPE="char" LENGTH="64" NOTNULL="true" SEQUENCE="false" COMMENT="A codename for the transaction. The responsible component can interpret it."/>
+        <FIELD NAME="reasonargs" TYPE="text" NOTNULL="true" SEQUENCE="false" COMMENT="JSON encoded list of arguments that can be parsed by the component."/>
+        <FIELD NAME="reasondesc" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="A description of the reason in plain English."/>
+        <FIELD NAME="publicnote" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="A public note attached to this transaction."/>
+        <FIELD NAME="privatenote" TYPE="char" LENGTH="255" NOTNULL="true" SEQUENCE="false" COMMENT="A private note attached to this transaction."/>
+        <FIELD NAME="recordedon" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The UNIX timestamp at which the transaction was recorded."/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="actinguserid" TYPE="foreign" FIELDS="actinguserid" REFTABLE="user" REFFIELDS="id"/>
+        <KEY NAME="creditid" TYPE="foreign" FIELDS="creditid" REFTABLE="block_credits" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+  </TABLES>
+</XMLDB>
