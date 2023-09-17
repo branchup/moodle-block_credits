@@ -26,6 +26,7 @@
 namespace block_credits;
 
 use block_credits\local\note\note;
+use block_credits\local\reason\credits_reason;
 use block_credits\local\reason\reason;
 use DateTimeImmutable;
 
@@ -62,7 +63,7 @@ class manager {
             $reasondesc = $reasondesc->out('en');
         }
         $tx = (object) [
-            'crediti' => $creditid,
+            'creditid' => $creditid,
             'userid' => $userid,
             'actinguserid' => $USER->id,
             'amount' => $amount,
@@ -82,6 +83,111 @@ class manager {
         global $DB;
         return (int) $DB->get_field_select('block_credits', 'COALESCE(SUM(remaining), 0)', 'userid = ? AND validuntil >= ?',
             [$userid, $dt->getTimestamp()]);
+    }
+
+    public function refund_user_credits($userid, $quantity, reason $reason, DateTimeImmutable $validasat = null) {
+        global $DB, $USER;
+
+        if ($quantity <= 0) {
+            throw new \coding_exception('Invalid number of credits to refund.');
+        }
+
+        // Generate the description.
+        $reasondesc = $reason->get_description();
+        if ($reasondesc instanceof \lang_string) {
+            $reasondesc = $reasondesc->out('en');
+        }
+
+        // Prepare filters to find buckets where we can refund.
+        $filters = [
+            'userid = :userid',
+            'used > 0',
+            'validuntil > :now'
+        ];
+        $params = ['userid' => $userid, 'now' => time()];
+        if ($validasat) {
+            $filters[] = 'validuntil >= :validasat';
+            $params['validasat'] = $validasat->getTimestamp();
+        }
+
+        // Do the actual refund.
+        $transaction = $DB->start_delegated_transaction();
+        $buckets = $DB->get_records_select('block_credits', implode(' AND ', $filters), $params, 'validuntil DESC');
+        $remainingtorefund = $quantity;
+        foreach ($buckets as $bucket) {
+            $available = (int) $bucket->used;
+            $localrefund = min($remainingtorefund, $available);
+
+            $bucket->remaining += $localrefund;
+            $bucket->used -= $localrefund;
+
+            $tx = (object) [
+                'creditid' => $bucket->id,
+                'userid' => $userid,
+                'actinguserid' => $USER->id,
+                'amount' => $localrefund,
+                'component' => $reason->get_component(),
+                'reasoncode' => $reason->get_code(),
+                'reasonargs' => json_encode($reason->get_args()),
+                'reasondesc' => $reasondesc,
+                'recordedon' => time(),
+            ];
+
+            $DB->update_record('block_credits', $bucket);
+            $DB->insert_record('block_credits_tx', $tx);
+
+            $remainingtorefund = max(0, $remainingtorefund - $localrefund);
+            if ($remainingtorefund <= 0) {
+                break;
+            }
+        }
+
+        if ($remainingtorefund > 0) {
+            $now = time();
+            $bucket = (object) [
+                'userid' => $userid,
+                'total' => $remainingtorefund,
+                'remaining' => 0,
+                'used' => 0,
+                'expired' => $remainingtorefund,
+                'creditedon' => $now,
+                'validuntil' => $now
+            ];
+            $bucket->id = $DB->insert_record('block_credits', $bucket);
+
+            $tx = (object) [
+                'creditid' => $bucket->id,
+                'userid' => $userid,
+                'actinguserid' => $USER->id,
+                'amount' => $remainingtorefund,
+                'component' => $reason->get_component(),
+                'reasoncode' => $reason->get_code(),
+                'reasonargs' => json_encode($reason->get_args()),
+                'reasondesc' => $reasondesc,
+                'recordedon' => time(),
+            ];
+            $DB->insert_record('block_credits_tx', $tx);
+
+            $reason = new credits_reason('reasonrefundafterexpiry');
+            $reasondesc = $reason->get_description();
+            if ($reasondesc instanceof \lang_string) {
+                $reasondesc = $reasondesc->out('en');
+            }
+            $tx = (object) [
+                'creditid' => $bucket->id,
+                'userid' => $userid,
+                'actinguserid' => $USER->id,
+                'amount' => -$remainingtorefund,
+                'component' => $reason->get_component(),
+                'reasoncode' => $reason->get_code(),
+                'reasonargs' => json_encode($reason->get_args()),
+                'reasondesc' => $reasondesc,
+                'recordedon' => time(),
+            ];
+            $DB->insert_record('block_credits_tx', $tx);
+        }
+
+        $DB->commit_delegated_transaction($transaction);
     }
 
     public function spend_user_credits($userid, $quantity, reason $reason) {
@@ -108,7 +214,7 @@ class manager {
 
             // Note that this is non-atomic operation.
             $bucket->used += $localspend;
-            $bucket->remaining -= max(0, $localspend);
+            $bucket->remaining -= $localspend;
 
             $tx = (object) [
                 'creditid' => $bucket->id,

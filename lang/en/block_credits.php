@@ -48,6 +48,7 @@ $string['reasonexpired'] = 'Credits expired.';
 $string['reasonextended'] = 'Credit validity changed from {$a->from} to {$a->to}.';
 $string['reasonother'] = 'Credit update.';
 $string['reasonpurchase'] = 'Credits purchased, valid until {$a->validuntil}.';
+$string['reasonrefundafterexpiry'] = 'Credits could not be refunded after their expiry.';
 $string['reasonrefunded'] = 'Refund.';
 $string['recordedon'] = 'Recorded on';
 $string['systemuser'] = 'System';
