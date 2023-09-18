@@ -28,7 +28,6 @@ namespace block_credits\output;
 use block_credits\local\reason\credits_reason;
 use block_credits\local\reason\orphan_reason;
 use block_credits\local\reason\reason_with_location;
-use core_user\fields;
 use html_writer;
 
 defined('MOODLE_INTERNAL') || die();
@@ -42,26 +41,25 @@ require_once($CFG->libdir . '/tablelib.php');
  * @author     Frédéric Massart <fred@branchup.tech>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class user_credits_txs_table extends \table_sql {
+class my_credits_txs_table extends \table_sql {
 
     /** @var int The page context ID. */
     protected $pagectxid;
 
     public function __construct($userid, $pagectxid, $creditid = null) {
-        parent::__construct('block_credits_user_txs_' . $userid);
+        parent::__construct('block_credits_my_txs_' . $userid);
         $this->pagectxid = $pagectxid;
 
-        $filters = ['t.userid = ?'];
+        $filters = ['userid = ?'];
         $filtersparams = [$userid];
         if ($creditid) {
-            $filters[] = 't.creditid = ?';
+            $filters[] = 'creditid = ?';
             $filtersparams[] = $creditid;
         }
 
-        $namefields = fields::for_name()->get_sql('u', false, '', '', false)->selects;
         $this->set_sql(
-            "t.*, $namefields",
-            '{block_credits_tx} t LEFT JOIN {user} u ON u.id = t.actinguserid',
+            "*",
+            '{block_credits_tx}',
             implode(' AND ', $filters),
             $filtersparams,
         );
@@ -71,9 +69,6 @@ class user_credits_txs_table extends \table_sql {
             'amount' => get_string('amount', 'block_credits'),
             'reason' => get_string('label', 'block_credits'),
             'ref' => '',
-            'privatenote' => get_string('privatenote', 'block_credits'),
-            'actinguserid' => get_string('actinguserid', 'block_credits'),
-            'creditid' => 'CID',
         ];
 
         $this->define_columns(array_keys($columns));
@@ -86,21 +81,6 @@ class user_credits_txs_table extends \table_sql {
         }
 
         $this->collapsible(false);
-    }
-
-    public function col_actinguserid($row) {
-        $name = null;
-        if (!$row->actinguserid) {
-            $name = get_string('systemuser', 'block_credits');
-        } else if ($row->actinguserid != $row->userid) {
-            $name = fullname($row);
-        }
-
-        if ($this->download || !$name) {
-            return $name ?? '-';
-        }
-
-        return html_writer::link(new \moodle_url('/user/view.php', ['id' => $row->actinguserid]), $name);
     }
 
     public function col_amount($row) {
@@ -138,23 +118,6 @@ class user_credits_txs_table extends \table_sql {
             return html_writer::link($url, s($location));
         }
         return s($location);
-    }
-
-    public function col_privatenote($row) {
-        global $OUTPUT;
-        if (!$row->privatenote) {
-            return '-';
-        }
-        return html_writer::tag('a', $OUTPUT->render_from_template('block_credits/icon-note', []), [
-            'class' => 'btn btn-link p-0 text-left text-body',
-            'href' => '#',
-            'role' => 'button',
-            'data-container' => 'body',
-            'data-toggle' => 'popover',
-            'data-content' => nl2br(s($row->privatenote)),
-            'data-placement' => 'left',
-            'data-html' => 'true'
-        ]);
     }
 
     public function col_recordedon($row) {

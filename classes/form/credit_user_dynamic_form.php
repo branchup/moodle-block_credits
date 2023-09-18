@@ -31,12 +31,12 @@ use block_credits\local\note\static_note;
 use block_credits\local\reason\credits_reason;
 use block_credits\manager;
 use context;
-use context_system;
 use core_date;
 use core_form\dynamic_form;
 use core_user;
 use DateTimeImmutable;
 use html_writer;
+use moodle_exception;
 use moodle_url;
 
 /**
@@ -123,7 +123,7 @@ class credit_user_dynamic_form extends dynamic_form {
      * @return context
      */
     protected function get_context_for_dynamic_submission(): context {
-        return context_system::instance();
+        return context::instance_by_id($this->optional_param('pagectxid', SYSCONTEXTID, PARAM_INT));
     }
 
     /**
@@ -132,8 +132,22 @@ class credit_user_dynamic_form extends dynamic_form {
      * @return void
      */
     protected function check_access_for_dynamic_submission(): void {
-        # TODO Capability check.
-        // require_capability('local/callista:setactivitiesoptions', $this->get_context_for_dynamic_submission());
+        $context = $this->get_context_for_dynamic_submission();
+        require_capability('block/credits:manage', $context);
+        $manager = manager::instance();
+
+        $userid = $this->optional_param('userid', 0, PARAM_INT);
+        if ($userid) {
+            try {
+                $manager->require_manage_user($userid, $context);
+            } catch (\moodle_exception $e) {
+                $contextcourse = $context->get_course_context(false);
+                if (!$contextcourse || $contextcourse->instanceid == SITEID) {
+                    throw $e;
+                }
+                throw new moodle_exception('usernotenrolledincurrentcourse', 'block_credits');
+            }
+        }
     }
 
     /**
@@ -156,7 +170,7 @@ class credit_user_dynamic_form extends dynamic_form {
 
         return [
             'redirecturl' => (new moodle_url('/blocks/credits/manage_user.php',
-                ['id' => $data->userid, 'pagectxid' => $data->pagectxid]))->out(false),
+                ['id' => $data->userid, 'ctxid' => $data->pagectxid]))->out(false),
         ];
     }
 
@@ -183,7 +197,7 @@ class credit_user_dynamic_form extends dynamic_form {
     protected function get_page_url_for_dynamic_submission(): moodle_url {
         $userid = $this->optional_param('userid', 0, PARAM_INT);
         $pagectxid = $this->optional_param('pagectxid', SYSCONTEXTID, PARAM_INT);
-        return new moodle_url('/blocks/credits/manage_user.php', ['id' => $userid, 'pagectxid' => $pagectxid]);
+        return new moodle_url('/blocks/credits/manage_user.php', ['id' => $userid, 'ctxid' => $pagectxid]);
     }
 
     /**

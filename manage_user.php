@@ -23,6 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use block_credits\manager;
 use block_credits\output\user_credits_table;
 use block_credits\output\user_credits_txs_table;
 
@@ -30,24 +31,43 @@ require('../../config.php');
 
 $userid = required_param('id', PARAM_INT);
 $contextid = optional_param('ctxid', SYSCONTEXTID, PARAM_INT);
+$creditid = optional_param('creditid', null, PARAM_INT);
 $view = optional_param('view', 'credits', PARAM_ALPHANUMEXT);
 
 $context = context::instance_by_id($contextid);
 
-$baseurl = new moodle_url('/blocks/credits/manage_user.php', ['ctxid' => $contextid, 'id' => $userid]);
-$url = new moodle_url($baseurl, ['view' => $view]);
+$baseparams = ['ctxid' => $contextid, 'id' => $userid];
+$baseurl = new moodle_url('/blocks/credits/manage_user.php', $baseparams);
+
+$pageparams = ['view' => $view];
+if ($view === 'tx' && $creditid) {
+    $pageparams += ['creditid' => $creditid];
+}
+$url = new moodle_url($baseurl, $pageparams);
+
 $PAGE->set_context($context);
 $PAGE->set_pagelayout('incourse');
 $PAGE->set_url($url);
 
-require_login();
-# TODO Require permissions.
+$manager = manager::instance();
+$coursecontext = $context->get_course_context(false);
+require_login($coursecontext ? $coursecontext->instanceid : null);
+require_capability('block/credits:manage', $context);
 
 $user = core_user::get_user($userid, '*', MUST_EXIST);
+$manager->require_manage_user($userid, $context);
+$manager->check_for_expired_credits($userid);
+
 $PAGE->set_title(fullname($user));
-$PAGE->set_heading(fullname($user));
+$PAGE->set_heading(format_string($COURSE->fullname));
 
 echo $OUTPUT->header();
+
+$backurl = new moodle_url('/blocks/credits/manage_users.php', ['ctxid' => $contextid]);
+echo $OUTPUT->render_from_template('block_credits/page_header', [
+    'backurl' => $backurl->out(false),
+    'title' => fullname($user),
+]);
 
 echo html_writer::start_div('d-flex flex-row justify-content-between');
 echo html_writer::start_div();
@@ -58,20 +78,33 @@ echo $OUTPUT->tabtree([
 echo html_writer::end_div();
 echo html_writer::start_div();
 echo html_writer::tag('button', get_string('addcredits', 'block_credits'), ['id' => 'addcreditsbtn',
-    'class' => 'btn btn-primary', 'type' => 'button', 'data-userid' => $userid]);
+    'class' => 'btn btn-primary', 'type' => 'button', 'data-userid' => $userid, 'data-pagectxid' => $contextid]);
 echo html_writer::end_div();
 echo html_writer::end_div();
 
 $PAGE->requires->js_call_amd('block_credits/modals', 'registerAddCreditButton', ['#addcreditsbtn']);
 
 if ($view === 'tx') {
-    $table = new user_credits_txs_table($userid);
+
+    if ($creditid) {
+        $removefilterurl = new moodle_url($url);
+        $removefilterurl->remove_params('creditid');
+        echo html_writer::tag('p', get_string('transactionsfilteredforid', 'block_credits', $creditid)
+            . ' ' . html_writer::link($removefilterurl, get_string('removefilter', 'block_credits')));
+    }
+
+    $table = new user_credits_txs_table($userid, $contextid, $creditid);
     $table->define_baseurl($url);
     $table->out(20, false);
 } else {
-    $table = new user_credits_table($userid);
+    echo html_writer::start_div('block_credits-cancel-overflow'); // Else dropdown menu is cropped on some versions.
+    $table = new user_credits_table($userid, $contextid);
     $table->define_baseurl($url);
     $table->out(20, false);
+    echo html_writer::end_div();
+
+    $PAGE->requires->js_call_amd('block_credits/modals', 'delegateExpireNowButton', ['body', '[data-action=expirenow]']);
+    $PAGE->requires->js_call_amd('block_credits/modals', 'delegateExtendValidityButton', ['body', '[data-action=extendvalidity]']);
 }
 
 echo $OUTPUT->footer();

@@ -25,9 +25,8 @@
 
 namespace block_credits\output;
 
-use core_date;
+use context;
 use core_user\fields;
-use DateTimeImmutable;
 use html_writer;
 
 defined('MOODLE_INTERNAL') || die();
@@ -56,6 +55,7 @@ class users_table extends \table_sql {
         $filterparams = [];
         $filters = ['1=1'];
 
+        // Filters by name.
         if (!empty($options['query'])) {
             $filterparams = [
                 $DB->sql_like($DB->sql_concat('u.firstname', "' '", 'u.lastname'), ':namefilterfl', false, false),
@@ -67,6 +67,15 @@ class users_table extends \table_sql {
             ];
             $filters[] = '(' . implode(' OR ', $filterparams) . ')';
             $filterparams += $namefilterparams;
+        }
+
+        // Filter users in context.
+        $context = context::instance_by_id($pagectxid);
+        $coursecontext = $context->get_course_context(false);
+        if ($coursecontext && $coursecontext->instanceid != SITEID) {
+            [$enrolledsql, $enrolledparams] = get_enrolled_sql($coursecontext, '', 0, false);
+            $filters[] = 'u.id IN (' . $enrolledsql . ')';
+            $filterparams += $enrolledparams;
         }
 
         $namefields = fields::for_name()->get_sql('u', false, '', '', false)->selects;
@@ -98,7 +107,7 @@ class users_table extends \table_sql {
             'total' => get_string('total', 'block_credits'),
             'used' => get_string('used', 'block_credits'),
             'expired' => get_string('expired', 'block_credits'),
-            'validity' => get_string('validuntil', 'block_credits'),
+            'validity' => get_string('soonestexpiry', 'block_credits'),
         ];
 
         $this->define_columns(array_keys($columns));
@@ -118,11 +127,7 @@ class users_table extends \table_sql {
     }
 
     public function col_validity($row) {
-        if (!$row->validity) {
-            return '-';
-        }
-        $dt = (new DateTimeImmutable('@' . $row->validity))->setTimezone(core_date::get_user_timezone_object());
-        return $dt->format('Y-m-d H:i');
+        return userdate($row->validity, get_string('strftimedatetimeshort', 'core_langconfig'));
     }
 
 }

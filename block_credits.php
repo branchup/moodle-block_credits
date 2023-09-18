@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use block_credits\manager;
+
 /**
  * Language file.
  *
@@ -33,18 +35,51 @@ class block_credits extends block_base {
     }
 
     /**
+     * Hide the header.
+     */
+    public function hide_header() {
+        return true;
+    }
+
+    /**
      * Get content.
      *
      * @return object The content.
      */
     public function get_content() {
+        global $OUTPUT, $USER;
+
         if ($this->content !== null) {
             return $this->content;
         }
 
+        $manager = manager::instance();
+        $manager->check_for_expired_credits($USER->id);
+
+        $expiringbuckets = $manager->get_buckets_expiring_before($USER->id, new DateTimeImmutable('+45 days'));
+        $mycreditsurl = new moodle_url('/blocks/credits/my.php', ['ctxid' => $this->page->context->id]);
+        $manageurl = new moodle_url('/blocks/credits/manage_users.php', ['ctxid' => $this->page->context->id]);
+        $canmanage = has_capability('block/credits:manage', $this->page->context);
+        $haseverhadcredits = $manager->has_ever_had_any_credits($USER->id);
+
         $this->content = new stdClass();
         $this->content->footer = '';
-        $this->content->text = 'Hello world!';
+        $this->content->text = $OUTPUT->render_from_template('block_credits/block', [
+            'credits' => $manager->get_available_credits_at_time($USER->id, new DateTimeImmutable()),
+            'hasexpiringcredits' => !empty($expiringbuckets),
+            'expiringcredits' => array_values(array_map(function($bucket) {
+                return [
+                    'credits' => $bucket->remaining,
+                    'validuntilhtml' => userdate_htmltime($bucket->validuntil,
+                        get_string('strftimedatemonthabbr', 'core_langconfig')),
+                ];
+            }, $expiringbuckets)),
+            'showmycreditslink' => $haseverhadcredits,
+            'mycreditsurl' => $mycreditsurl->out(false),
+            'canmanage' => has_capability('block/credits:manage', $this->page->context),
+            'manageurl' => $manageurl->out(false),
+            'showactions' => $haseverhadcredits || $canmanage,
+        ]);
 
         return $this->content;
     }

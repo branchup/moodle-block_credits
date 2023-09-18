@@ -1,0 +1,19 @@
+.block_credits .credits {
+    text-align: center;
+}
+.block_credits .credits-number {
+    font-size: 3rem;
+    font-weight: bold;
+    line-height: 1;
+}
+.block_credits .credits-legend {
+    margin-top: 0rem;
+}
+
+.block_credits-no-caret::after {
+    display: none !important;
+}
+
+.block_credits-cancel-overflow .no-overflow {
+    overflow: visible;
+}

@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Permissions.
+ * Tasks.
  *
  * @package    block_credits
  * @copyright  2023 Institut français du Japon
@@ -25,30 +25,14 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$capabilities = [
-    'block/credits:addinstance' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_BLOCK,
-        'archetypes' => [],
-        'clonepermissionsfrom' => 'moodle/site:manageblocks'
-    ],
-    'block/credits:myaddinstance' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [],
-        'clonepermissionsfrom' => 'moodle/my:manageblocks'
-    ],
-    'block/credits:manage' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [],
-    ],
-    'block/credits:view' => [
-        'captype' => 'view',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'student' => true,
-            'editingteacher' => true
-        ],
-    ],
+$tasks = [
+    [
+        'classname' => 'block_credits\task\expire_credits',
+        'blocking' => 0,
+        'minute' => '0',
+        'hour' => '0',
+        'day' => '*',
+        'dayofweek' => '*',
+        'month' => '*'
+    ]
 ];

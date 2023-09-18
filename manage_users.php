@@ -23,6 +23,7 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
+use block_credits\manager;
 use block_credits\output\users_table;
 
 require('../../config.php');
@@ -34,16 +35,18 @@ $context = context::instance_by_id($contextid);
 
 $url = new moodle_url('/blocks/credits/manage_users.php', ['ctxid' => $contextid, 'query' => $query]);
 $PAGE->set_context($context);
-$PAGE->set_pagelayout('incourse');
-$PAGE->set_title(get_string('userscredits', 'block_credits'));
-$PAGE->set_heading(get_string('userscredits', 'block_credits'));
 $PAGE->set_url($url);
+$PAGE->set_pagelayout('incourse');
 
-require_login();
+$coursecontext = $context->get_course_context(false);
+require_login($coursecontext ? $coursecontext->instanceid : null);
+require_capability('block/credits:manage', $context);
 
-# TODO Require permissions.
+$PAGE->set_title(get_string('userscredits', 'block_credits'));
+$PAGE->set_heading(format_string($COURSE->fullname));
 
 echo $OUTPUT->header();
+echo $OUTPUT->heading(get_string('userscredits', 'block_credits'), 3);
 
 echo html_writer::start_div('d-flex flex-row justify-content-between');
 echo html_writer::start_div();
@@ -52,16 +55,20 @@ echo $OUTPUT->render_from_template('core/search_input', [
     'inputname' => 'q',
     'searchstring' => get_string('search', 'core'),
     'query' => $query,
-    'extraclasses' => 'mb-3'
+    'extraclasses' => 'mb-3',
+    'hiddenfields' => [['name' => 'ctxid', 'value' => $contextid]]
 ]);
 echo html_writer::end_div();
 echo html_writer::start_div();
 echo html_writer::tag('button', get_string('addcredits', 'block_credits'), ['id' => 'addcreditsbtn',
-    'class' => 'btn btn-primary', 'type' => 'button']);
+    'class' => 'btn btn-primary', 'type' => 'button', 'data-pagectxid' => $contextid]);
 echo html_writer::end_div();
 echo html_writer::end_div();
 
 $PAGE->requires->js_call_amd('block_credits/modals', 'registerAddCreditButton', ['#addcreditsbtn']);
+
+$manager = manager::instance();
+$manager->check_for_expired_credits();
 
 $table = new users_table(['query' => $query, 'pagectxid' => $contextid]);
 $table->define_baseurl($url);

@@ -1,0 +1,11 @@
+<div class="d-flex align-items-center mb-2">
+    {{#backurl}}
+    <a class="p-2 rounded-circle mr-2 d-inline-block bg-light text-body" href="{{ backurl }}">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="height: 24px; width: 24px;">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5L8.25 12l7.5-7.5" />
+        </svg>
+        <span class="sr-only">{{#str}}back, core{{/str}}</span>
+    </a>
+    {{/backurl}}
+    <h3 class="m-0">{{ title }}</h3>
+</div>

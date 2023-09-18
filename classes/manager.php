@@ -28,6 +28,8 @@ namespace block_credits;
 use block_credits\local\note\note;
 use block_credits\local\reason\credits_reason;
 use block_credits\local\reason\reason;
+use context;
+use core_date;
 use DateTimeImmutable;
 
 /**
@@ -42,6 +44,32 @@ class manager {
 
     /** @var static The instance. */
     protected static $instance;
+
+    public function require_manage_user($userid, context $context) {
+        require_capability('block/credits:manage', $context);
+        $coursecontext = $context->get_course_context(false);
+        if ($coursecontext && $coursecontext->instanceid != SITEID && !is_enrolled($coursecontext, $userid)) {
+            throw new \moodle_exception('cannotmanageuser', 'block_credits');
+        }
+    }
+
+    public function check_for_expired_credits($userid = null) {
+        global $DB;
+        $filters = ['remaining > 0', 'validuntil < :now'];
+        $params = ['now' => time()];
+        if ($userid) {
+            $filters[] = 'userid = :userid';
+            $params['userid'] = $userid;
+        }
+
+        $bucketids = $DB->get_fieldset_select('block_credits', 'id', implode(' AND ', $filters), $params, 'validuntil ASC');
+        foreach ($bucketids as $bucketid) {
+            $transaction = $DB->start_delegated_transaction();
+            $record = $DB->get_record('block_credits', ['id' => $bucketid]);
+            $this->expire_credit_bucket($record, new credits_reason('reasonexpired'));
+            $DB->commit_delegated_transaction($transaction);
+        }
+    }
 
     public function credit_user($userid, $amount, DateTimeImmutable $validuntil, reason $reason, note $note = null) {
         global $DB, $USER;
@@ -79,10 +107,111 @@ class manager {
         $DB->commit_delegated_transaction($transaction);
     }
 
+    public function expire_credit_bucket($bucket, reason $reason, note $note = null) {
+        global $DB, $USER;
+        if ($bucket->remaining <= 0) {
+            throw new \coding_exception('No credits to expire');
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+
+        $expiringcredits = (int) $bucket->remaining;
+        $bucket->expired += $expiringcredits;
+        $bucket->remaining = 0;
+        $bucket->validuntil = min($bucket->validuntil, time()); // If we expire early, use current time.
+        $DB->update_record('block_credits', $bucket);
+
+        $reasondesc = $reason->get_description();
+        if ($reasondesc instanceof \lang_string) {
+            $reasondesc = $reasondesc->out('en');
+        }
+        $tx = (object) [
+            'creditid' => $bucket->id,
+            'userid' => $bucket->userid,
+            'actinguserid' => $USER->id,
+            'amount' => -$expiringcredits,
+            'component' => $reason->get_component(),
+            'reasoncode' => $reason->get_code(),
+            'reasonargs' => json_encode($reason->get_args()),
+            'reasondesc' => $reasondesc,
+            'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
+            'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
+            'recordedon' => time(),
+        ];
+        $DB->insert_record('block_credits_tx', $tx);
+
+        $DB->commit_delegated_transaction($transaction);
+    }
+
+    public function extend_credit_bucket_validity($bucket, DateTimeImmutable $validuntil, note $note = null) {
+        global $DB, $USER;
+        if ($bucket->validuntil < time()) {
+            throw new \coding_exception('Credit bucket already expired');
+        } else if ($validuntil->getTimestamp() < $bucket->validuntil) {
+            throw new \coding_exception('Cannot reduce validity');
+        } else if ($validuntil->getTimestamp() < time()) {
+            throw new \coding_exception('Cannot set validity in the past');
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+
+        $prevvaliduntil = new DateTimeImmutable('@' . $bucket->validuntil);
+        $bucket->validuntil = $validuntil->getTimestamp();
+        $DB->update_record('block_credits', $bucket);
+
+        $reason = new credits_reason('reasonextended', [
+            'from' => $prevvaliduntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
+            'to' => $validuntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
+        ]);
+        $reasondesc = $reason->get_description();
+        if ($reasondesc instanceof \lang_string) {
+            $reasondesc = $reasondesc->out('en');
+        }
+        $tx = (object) [
+            'creditid' => $bucket->id,
+            'userid' => $bucket->userid,
+            'actinguserid' => $USER->id,
+            'amount' => 0,
+            'component' => $reason->get_component(),
+            'reasoncode' => $reason->get_code(),
+            'reasonargs' => json_encode($reason->get_args()),
+            'reasondesc' => $reasondesc,
+            'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
+            'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
+            'recordedon' => time(),
+        ];
+        $DB->insert_record('block_credits_tx', $tx);
+
+        $DB->commit_delegated_transaction($transaction);
+    }
+
     public function get_available_credits_at_time($userid, \DateTimeImmutable $dt) {
         global $DB;
         return (int) $DB->get_field_select('block_credits', 'COALESCE(SUM(remaining), 0)', 'userid = ? AND validuntil >= ?',
             [$userid, $dt->getTimestamp()]);
+    }
+
+    public function get_buckets_expiring_before($userid, \DateTimeImmutable $dt) {
+        global $DB;
+        return $DB->get_records_select('block_credits', 'remaining > 0 AND userid = ? AND validuntil <= ?',
+            [$userid, $dt->getTimestamp()], 'validuntil ASC');
+    }
+
+    public function get_buckets_available($userid) {
+        global $DB;
+        return $DB->get_records_select('block_credits', 'remaining > 0 AND userid = ? AND validuntil >= ?',
+            [$userid, time()], 'validuntil ASC');
+    }
+
+    public function get_buckets_unavailable($userid) {
+        global $DB;
+        return $DB->get_records_select('block_credits', 'userid = ? AND (remaining <= 0 OR validuntil < ?)',
+            [$userid, time()], 'validuntil DESC');
+    }
+
+    public function has_ever_had_any_credits($userid) {
+        global $DB;
+        return $DB->record_exists_select('block_credits', 'userid = ?', [$userid]);
     }
 
     public function refund_user_credits($userid, $quantity, reason $reason, DateTimeImmutable $validasat = null) {

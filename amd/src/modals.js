@@ -25,18 +25,86 @@
 import ModalForm from 'core_form/modalform';
 import {get_string as getString} from 'core/str';
 
+/**
+ * Delegate click.
+ *
+ * @param {String} regionSelector
+ * @param {String} selector
+ * @param {Function} callback
+ */
+function delegateClick(regionSelector, selector, callback) {
+  document.querySelector(regionSelector).addEventListener('click', (e) => {
+    const target = e.target.closest(selector);
+    if (!target) {
+      return;
+    }
+    e.preventDefault();
+    callback(target);
+  });
+}
+
 export const registerAddCreditButton = (selector) => {
   document.querySelector(selector).addEventListener('click', (e) => {
+    e.preventDefault();
     const userId = e.currentTarget.dataset.userid;
-    openAddCreditModal(userId);
+    const pageCtxId = e.currentTarget.dataset.pagectxid;
+    openAddCreditModal(userId, pageCtxId);
   });
 };
 
-const openAddCreditModal = (userId) => {
+export const delegateExtendValidityButton = (regionSelector, selector) => {
+  delegateClick(regionSelector, selector, (target) => {
+    const creditId = target.dataset.creditid;
+    const pageCtxId = target.dataset.pagectxid;
+    openExtendValidityModal(creditId, pageCtxId);
+  });
+};
+
+export const delegateExpireNowButton = (regionSelector, selector) => {
+  delegateClick(regionSelector, selector, (target) => {
+    const creditId = target.dataset.creditid;
+    const pageCtxId = target.dataset.pagectxid;
+    openExpireNowModal(creditId, pageCtxId);
+  });
+};
+
+const openAddCreditModal = (userId, pageCtxId) => {
   const modal = new ModalForm({
     formClass: 'block_credits\\form\\credit_user_dynamic_form',
     modalConfig: {scrollable: false, title: getString('addcredits', 'block_credits')},
-    args: {userid: userId, lockuser: userId > 0},
+    args: {userid: userId, lockuser: userId > 0, pagectxid: pageCtxId},
+  });
+  modal.addEventListener(modal.events.FORM_SUBMITTED, function(e) {
+    if (e.detail.redirecturl) {
+      window.location.href = e.detail.redirecturl;
+    } else {
+      window.location.reload();
+    }
+  });
+  modal.show();
+};
+
+const openExtendValidityModal = (creditId, pageCtxId) => {
+  const modal = new ModalForm({
+    formClass: 'block_credits\\form\\extend_validity_dynamic_form',
+    modalConfig: {scrollable: false, title: getString('extendvalidity', 'block_credits')},
+    args: {creditid: creditId, pagectxid: pageCtxId},
+  });
+  modal.addEventListener(modal.events.FORM_SUBMITTED, function(e) {
+    if (e.detail.redirecturl) {
+      window.location.href = e.detail.redirecturl;
+    } else {
+      window.location.reload();
+    }
+  });
+  modal.show();
+};
+
+const openExpireNowModal = (creditId, pageCtxId) => {
+  const modal = new ModalForm({
+    formClass: 'block_credits\\form\\expire_now_dynamic_form',
+    modalConfig: {scrollable: false, title: getString('expirenow', 'block_credits')},
+    args: {creditid: creditId, pagectxid: pageCtxId},
   });
   modal.addEventListener(modal.events.FORM_SUBMITTED, function(e) {
     if (e.detail.redirecturl) {

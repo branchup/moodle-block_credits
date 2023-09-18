@@ -25,10 +25,14 @@
 
 namespace block_credits\output;
 
+use action_menu;
+use action_menu_link;
+use action_menu_link_secondary;
 use core_date;
 use core_user\fields;
 use DateTimeImmutable;
 use html_writer;
+use moodle_url;
 
 defined('MOODLE_INTERNAL') || die();
 require_once($CFG->libdir . '/tablelib.php');
@@ -46,10 +50,9 @@ class user_credits_table extends \table_sql {
     /** @var int The page context ID. */
     protected $pagectxid;
 
-    public function __construct($userid) {
-        global $DB;
-
+    public function __construct($userid, $pagectxid) {
         parent::__construct('block_credits_user_' . $userid);
+        $this->pagectxid = $pagectxid;
 
         $this->set_sql(
             '*',
@@ -59,7 +62,9 @@ class user_credits_table extends \table_sql {
         );
 
         $columns = [
+            'id' => 'CID',
             'creditedon' => get_string('creditedon', 'block_credits'),
+            'status' => '',
             'total' => get_string('total', 'block_credits'),
             'used' => get_string('used', 'block_credits'),
             'expired' => get_string('expired', 'block_credits'),
@@ -73,22 +78,59 @@ class user_credits_table extends \table_sql {
 
         $this->sortable(true, 'creditedon', SORT_DESC);
         $this->collapsible(false);
+
+        $this->column_class('actions', 'p-1');
     }
 
     public function col_creditedon($row) {
-        $dt = (new DateTimeImmutable('@' . $row->creditedon))->setTimezone(core_date::get_user_timezone_object());
-        return $dt->format('Y-m-d H:i');
+        return userdate($row->creditedon, get_string('strftimedatetimeshort', 'core_langconfig'));
     }
 
     public function col_validuntil($row) {
-        $dt = (new DateTimeImmutable('@' . $row->validuntil))->setTimezone(core_date::get_user_timezone_object());
-        return $dt->format('Y-m-d H:i');
+        return userdate($row->validuntil, get_string('strftimedatetimeshort', 'core_langconfig'));
+    }
+
+    public function col_status($row) {
+        if ($row->validuntil <= time()) {
+            return '<span class="badge badge-dark">' . get_string('expired', 'block_credits') . '</span>';
+        } else if (!$row->remaining) {
+            return '<span class="badge badge-secondary">' . get_string('used', 'block_credits') . '</span>';
+        }
+        return '<span class="badge badge-success">' . get_string('available', 'block_credits') . '</span>';
     }
 
     public function col_actions($row) {
         global $OUTPUT;
-        $actions = [];
-        return implode(' ', $actions);
+
+        $menu = new action_menu();
+        $menu->prioritise = true;
+        $icon = $OUTPUT->pix_icon('i/menu', get_string('edit'));
+        $menu->set_menu_trigger($icon, 'btn btn-icon d-flex align-items-center justify-content-center block_credits-no-caret');
+
+        $menu->add(new action_menu_link_secondary(new moodle_url('/blocks/credits/manage_user.php', [
+            'id' => $row->userid,
+            'creditid' => $row->id,
+            'ctxid' => $this->pagectxid,
+            'view' => 'tx'
+        ]), null, get_string('transactions', 'block_credits')));
+
+        if ($row->validuntil > time()) {
+            $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('extendvalidity', 'block_credits'), [
+                'data-creditid' => $row->id,
+                'data-pagectxid' => $this->pagectxid,
+                'data-action' => 'extendvalidity',
+            ]));
+        }
+
+        if ($row->remaining > 0) {
+            $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('expirenow', 'block_credits'), [
+                'data-creditid' => $row->id,
+                'data-pagectxid' => $this->pagectxid,
+                'data-action' => 'expirenow',
+            ]));
+        }
+
+        return $OUTPUT->render($menu);
     }
 
 }

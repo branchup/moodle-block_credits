@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Permissions.
+ * Services.
  *
  * @package    block_credits
  * @copyright  2023 Institut français du Japon
@@ -23,32 +23,11 @@
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
-defined('MOODLE_INTERNAL') || die();
-
-$capabilities = [
-    'block/credits:addinstance' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_BLOCK,
-        'archetypes' => [],
-        'clonepermissionsfrom' => 'moodle/site:manageblocks'
-    ],
-    'block/credits:myaddinstance' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_SYSTEM,
-        'archetypes' => [],
-        'clonepermissionsfrom' => 'moodle/my:manageblocks'
-    ],
-    'block/credits:manage' => [
-        'captype' => 'write',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [],
-    ],
-    'block/credits:view' => [
-        'captype' => 'view',
-        'contextlevel' => CONTEXT_COURSE,
-        'archetypes' => [
-            'student' => true,
-            'editingteacher' => true
-        ],
+$functions = [
+    'block_credits_credit_user_for_purchase' => [
+        'classname' => 'block_credits\external\credit_user_for_purchase',
+        'methodname' => 'execute',
+        'description' => 'Give credits to a use for a purchase.',
+        'type' => 'write',
     ],
 ];
