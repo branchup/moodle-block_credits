@@ -30,6 +30,7 @@ $string['addcredits'] = 'Add credits';
 $string['alreadyexipired'] = 'Already expired';
 $string['amount'] = 'Amount';
 $string['available'] = 'Available';
+$string['balance'] = 'Balance';
 $string['cannotmanageuser'] = 'Cannot manage user';
 $string['creditedon'] = 'Credited on';
 $string['credits:addinstance'] = 'Add a new block';

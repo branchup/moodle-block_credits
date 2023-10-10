@@ -67,6 +67,7 @@ class my_credits_txs_table extends \table_sql {
         $columns = [
             'recordedon' => get_string('date', 'core'),
             'amount' => get_string('amount', 'block_credits'),
+            'balance' => get_string('balance', 'block_credits'),
             'reason' => get_string('label', 'block_credits'),
             'ref' => '',
         ];
@@ -88,6 +89,13 @@ class my_credits_txs_table extends \table_sql {
             return '0';
         }
         return $row->amount > 0 ? '+' . $row->amount : $row->amount;
+    }
+
+    public function col_balance($row) {
+        global $DB;
+        return $DB->get_field_select('block_credits_tx', 'SUM(amount) AS balance', 'userid = ? AND ' .
+                '(recordedon < ? OR (recordedon = ? AND id <= ?))',
+            [$row->userid, $row->recordedon, $row->recordedon, $row->id]);
     }
 
     public function col_reason($row) {
@@ -122,6 +130,10 @@ class my_credits_txs_table extends \table_sql {
 
     public function col_recordedon($row) {
         return userdate($row->recordedon, get_string('strftimedatetimeshortaccurate', 'core_langconfig'));
+    }
+
+    public function get_sort_columns() {
+        return ['recordedon' => SORT_DESC, 'id' => SORT_DESC];
     }
 
     protected function get_reason_from_row($row) {
