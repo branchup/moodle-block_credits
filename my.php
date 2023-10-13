@@ -53,6 +53,16 @@ $manager->check_for_expired_credits($USER->id);
 
 echo $OUTPUT->header();
 
+if ($PAGE->has_secondary_navigation() && !$PAGE->secondarynav->has_children()) {
+    $backurl = new moodle_url('/course/view.php', ['id' => $COURSE->id]);
+    $backtext = get_string('backtocourse', 'block_credits');
+    if ($COURSE->id == SITEID) {
+        $backurl = new moodle_url('/my/');
+        $backtext = get_string('backtodashboard', 'block_credits');
+    }
+    echo html_writer::div(html_writer::link($backurl, '&lt; ' . $backtext), 'small mb-2');
+}
+
 if ($view === 'tx') {
     $backurl = new moodle_url($baseurl, ['view' => 'credits']);
     echo $OUTPUT->render_from_template('block_credits/page_header', [
