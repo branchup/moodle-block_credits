@@ -31,6 +31,7 @@ use block_credits\local\note\static_note;
 use block_credits\local\reason\credits_reason;
 use block_credits\manager;
 use context;
+use core_collator;
 use core_date;
 use core_form\dynamic_form;
 use core_user;
@@ -68,7 +69,19 @@ class credit_user_dynamic_form extends dynamic_form {
             $mform->setType('userid', PARAM_INT);
             $mform->addElement('static', 'fullname', get_string('fullname', 'core'), html_writer::div(fullname($user), 'mt-2'));
 
+        } else if ($this->is_in_course()) {
+            // Hardcoded selector to limit choice to valid users in course.
+            $users = get_enrolled_users($this->get_context_for_dynamic_submission()->get_course_context(false));
+            $choices = [];
+            foreach ($users as $user) {
+                $choices[$user->id] = fullname($user);
+            }
+            core_collator::asort($choices);
+            $mform->addElement('searchableselector', 'userid', '', $choices);
+            $mform->addRule('userid', null, 'required', null, 'client');
+
         } else {
+            // Dynamic selector of everyone.
             $attributes = [
                 'multiple' => false,
                 'ajax' => 'core_user/form_user_selector',
@@ -141,13 +154,22 @@ class credit_user_dynamic_form extends dynamic_form {
             try {
                 $manager->require_manage_user($userid, $context);
             } catch (\moodle_exception $e) {
-                $contextcourse = $context->get_course_context(false);
-                if (!$contextcourse || $contextcourse->instanceid == SITEID) {
+                if (!$this->is_in_course()) {
                     throw $e;
                 }
                 throw new moodle_exception('usernotenrolledincurrentcourse', 'block_credits');
             }
         }
+    }
+
+    /**
+     * Whether we are in a course.
+     *
+     * @return bool
+     */
+    protected function is_in_course() {
+        $coursecontext = $this->get_context_for_dynamic_submission()->get_course_context(false);
+        return $coursecontext && $coursecontext->instanceid != SITEID;
     }
 
     /**
