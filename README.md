@@ -14,6 +14,7 @@ Installation
 - Install the block
 - Add the block to the front page, dashboard, or a course
 - Assign the `block/credits:manage` permission
+- Review the `block/credits:viewall` permission
 - Review the `block/credits:view` permission if used outside a course
 
 Public API

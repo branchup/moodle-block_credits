@@ -87,7 +87,6 @@ class extend_validity_dynamic_form extends dynamic_form {
      * @return void
      */
     protected function check_access_for_dynamic_submission(): void {
-        require_capability('block/credits:manage', $this->get_context_for_dynamic_submission());
         $manager = manager::instance();
         $manager->require_manage_user($this->get_user_id(), $this->get_context_for_dynamic_submission());
 

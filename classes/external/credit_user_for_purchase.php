@@ -70,7 +70,6 @@ class credit_user_for_purchase extends external_api {
         static::validate_context($context);
 
         $manager = manager::instance();
-        require_capability('block/credits:manage', $context);
         $manager->require_manage_user($userid, $context);
 
         $validuntildt = new DateTimeImmutable('@' . $validuntil);

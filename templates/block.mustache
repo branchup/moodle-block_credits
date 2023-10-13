@@ -32,13 +32,18 @@
             </a>
         {{/showmycreditslink}}
         </div>
-        {{#canmanage}}
+        {{#canaudit}}
         <div>
             <a class="btn btn-secondary btn-sm" href="{{ manageurl }}">
+            {{#canmanage}}
                 {{#str}}manage, block_credits{{/str}}
+            {{/canmanage}}
+            {{^canmanage}}
+                {{#str}}viewall, block_credits{{/str}}
+            {{/canmanage}}
             </a>
         </div>
-        {{/canmanage}}
+        {{/canaudit}}
     </div>
     {{/showactions}}
 </div>

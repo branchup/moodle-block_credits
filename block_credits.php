@@ -61,7 +61,8 @@ class block_credits extends block_base {
         $expiringbuckets = $manager->get_buckets_expiring_before($USER->id, new DateTimeImmutable('+45 days'));
         $mycreditsurl = new moodle_url('/blocks/credits/my.php', ['ctxid' => $context->id]);
         $manageurl = new moodle_url('/blocks/credits/manage_users.php', ['ctxid' => $context->id]);
-        $canmanage = has_capability('block/credits:manage', $context);
+        $canmanage = $manager->can_manage($context);
+        $canaudit = $manager->can_audit($context);
         $haseverhadcredits = $manager->has_ever_had_any_credits($USER->id);
 
         $this->content = new stdClass();
@@ -78,9 +79,10 @@ class block_credits extends block_base {
             }, $expiringbuckets)),
             'showmycreditslink' => $haseverhadcredits,
             'mycreditsurl' => $mycreditsurl->out(false),
-            'canmanage' => has_capability('block/credits:manage', $this->page->context),
+            'canaudit' => $canaudit,
+            'canmanage' => $canmanage,
             'manageurl' => $manageurl->out(false),
-            'showactions' => $haseverhadcredits || $canmanage,
+            'showactions' => $haseverhadcredits || $canaudit,
         ]);
 
         return $this->content;

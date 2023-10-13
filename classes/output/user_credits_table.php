@@ -47,12 +47,15 @@ require_once($CFG->libdir . '/tablelib.php');
  */
 class user_credits_table extends \table_sql {
 
+    /** @var bool Whether we can manage the user. */
+    protected $canmanage;
     /** @var int The page context ID. */
     protected $pagectxid;
 
-    public function __construct($userid, $pagectxid) {
+    public function __construct($userid, $pagectxid, $canmanage = true) {
         parent::__construct('block_credits_user_' . $userid);
         $this->pagectxid = $pagectxid;
+        $this->canmanage = $canmanage;
 
         $this->set_sql(
             '*',
@@ -114,7 +117,7 @@ class user_credits_table extends \table_sql {
             'view' => 'tx'
         ]), null, get_string('transactions', 'block_credits')));
 
-        if ($row->validuntil > time()) {
+        if ($this->canmanage && $row->validuntil > time()) {
             $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('extendvalidity', 'block_credits'), [
                 'data-creditid' => $row->id,
                 'data-pagectxid' => $this->pagectxid,
@@ -122,7 +125,7 @@ class user_credits_table extends \table_sql {
             ]));
         }
 
-        if ($row->remaining > 0) {
+        if ($this->canmanage && $row->remaining > 0) {
             $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('expirenow', 'block_credits'), [
                 'data-creditid' => $row->id,
                 'data-pagectxid' => $this->pagectxid,

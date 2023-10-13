@@ -46,10 +46,55 @@ class manager {
     protected static $instance;
 
     /**
+     * Whether the current user can audit someone.
+     *
+     * We either have access to everyone, or manage permissions.
+     */
+    public function can_audit(context $context) {
+        return has_any_capability(['block/credits:manage', 'block/credits:viewall'], $context);
+    }
+
+    /**
+     * Whether the current user has manage permissions.
+     */
+    public function can_manage(context $context) {
+        return has_capability('block/credits:manage', $context);
+    }
+
+    /**
+     * Requires current user to be allowed to audit someone.
+     *
+     * We either have access to everyone, or manage permissions.
+     */
+    public function require_audit(context $context) {
+        if (!$this->can_audit($context)) {
+            require_capability('block/credits:viewall', $context);
+        }
+    }
+
+    /**
+     * Requires current user to have audit permission over user.
+     */
+    public function require_audit_user($userid, context $context) {
+        $this->require_audit($context);
+        $coursecontext = $context->get_course_context(false);
+        if ($coursecontext && $coursecontext->instanceid != SITEID && !is_enrolled($coursecontext, $userid)) {
+            throw new \moodle_exception('cannotaudituser', 'block_credits');
+        }
+    }
+
+    /**
+     * Requires current user to have manage permission.
+     */
+    public function require_manage(context $context) {
+        require_capability('block/credits:manage', $context);
+    }
+
+    /**
      * Requires current user to have manage permission over user.
      */
     public function require_manage_user($userid, context $context) {
-        require_capability('block/credits:manage', $context);
+        $this->require_manage($context);
         $coursecontext = $context->get_course_context(false);
         if ($coursecontext && $coursecontext->instanceid != SITEID && !is_enrolled($coursecontext, $userid)) {
             throw new \moodle_exception('cannotmanageuser', 'block_credits');

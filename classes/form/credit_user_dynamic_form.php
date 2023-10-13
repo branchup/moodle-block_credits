@@ -133,8 +133,8 @@ class credit_user_dynamic_form extends dynamic_form {
      */
     protected function check_access_for_dynamic_submission(): void {
         $context = $this->get_context_for_dynamic_submission();
-        require_capability('block/credits:manage', $context);
         $manager = manager::instance();
+        $manager->require_manage($context);
 
         $userid = $this->optional_param('userid', 0, PARAM_INT);
         if ($userid) {

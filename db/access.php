@@ -47,8 +47,15 @@ $capabilities = [
         'captype' => 'view',
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [
-            'student' => true,
-            'editingteacher' => true
+            'student' => CAP_ALLOW,
+            'editingteacher' => CAP_ALLOW
+        ],
+    ],
+    'block/credits:viewall' => [
+        'captype' => 'read',
+        'contextlevel' => CONTEXT_COURSE,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW
         ],
     ],
 ];

@@ -52,10 +52,10 @@ $PAGE->set_url($url);
 $manager = manager::instance();
 $coursecontext = $context->get_course_context(false);
 require_login($coursecontext ? $coursecontext->instanceid : null);
-require_capability('block/credits:manage', $context);
+$manager->require_audit($context);
 
 $user = core_user::get_user($userid, '*', MUST_EXIST);
-$manager->require_manage_user($userid, $context);
+$manager->require_audit_user($userid, $context);
 $manager->check_for_expired_credits($userid);
 
 $PAGE->set_title(fullname($user));
@@ -77,12 +77,14 @@ echo $OUTPUT->tabtree([
 ], $view);
 echo html_writer::end_div();
 echo html_writer::start_div();
-echo html_writer::tag('button', get_string('addcredits', 'block_credits'), ['id' => 'addcreditsbtn',
-    'class' => 'btn btn-primary', 'type' => 'button', 'data-userid' => $userid, 'data-pagectxid' => $contextid]);
+if ($manager->can_manage($context)) {
+    echo html_writer::tag('button', get_string('addcredits', 'block_credits'), ['id' => 'addcreditsbtn',
+        'class' => 'btn btn-primary', 'type' => 'button', 'data-userid' => $userid, 'data-pagectxid' => $contextid]);
+    $PAGE->requires->js_call_amd('block_credits/modals', 'registerAddCreditButton', ['#addcreditsbtn']);
+}
 echo html_writer::end_div();
 echo html_writer::end_div();
 
-$PAGE->requires->js_call_amd('block_credits/modals', 'registerAddCreditButton', ['#addcreditsbtn']);
 
 if ($view === 'tx') {
 
@@ -98,7 +100,7 @@ if ($view === 'tx') {
     $table->out(20, false);
 } else {
     echo html_writer::start_div('block_credits-cancel-overflow'); // Else dropdown menu is cropped on some versions.
-    $table = new user_credits_table($userid, $contextid);
+    $table = new user_credits_table($userid, $contextid, $manager->can_manage($context));
     $table->define_baseurl($url);
     $table->out(20, false);
     echo html_writer::end_div();
