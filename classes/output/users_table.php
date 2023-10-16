@@ -127,6 +127,9 @@ class users_table extends \table_sql {
     }
 
     public function col_validity($row) {
+        if (!$row->validity) {
+            return '-';
+        }
         return userdate($row->validity, get_string('strftimedatetimeshort', 'core_langconfig'));
     }
 
