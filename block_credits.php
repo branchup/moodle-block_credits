@@ -38,7 +38,10 @@ class block_credits extends block_base {
      * Hide the header.
      */
     public function hide_header() {
-        return true;
+        // Staff see the header because the content is different for them.
+        $context = $this->page->context->get_course_context(false) ?: context_system::instance();
+        $manager = manager::instance();
+        return !$manager->can_audit($context);
     }
 
     /**

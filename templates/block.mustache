@@ -1,49 +1,76 @@
 <div>
-    <div class="credits">
-        <div class="credits-number">
-            {{credits}}
+    {{! Student view. }}
+    {{^canaudit}}
+        <div class="credits">
+            <div class="credits-number">
+                {{credits}}
+            </div>
+            <div class="credits-legend">
+                {{#str}}credits, block_credits{{/str}}
+            </div>
         </div>
-        <div class="credits-legend">
-            {{#str}}credits, block_credits{{/str}}
-        </div>
-    </div>
-    <div>
-
-    {{#hasexpiringcredits}}
-    <div class="mt-3">
-        <h4 class="h5 m-0 mb-1">{{#str}}expiringsoon, block_credits{{/str}}</h4>
-        <table class="w-100">
-        {{#expiringcredits}}
-        <tr>
-            <td>{{#str}}ncredits, block_credits, {{credits}} {{/str}}</td>
-            <td class="text-right">{{{validuntilhtml}}}</td>
-        </tr>
-        {{/expiringcredits}}
-        </table>
-    </div>
-    {{/hasexpiringcredits}}
-
-    {{#showactions}}
-    <div class="d-flex mt-3 justify-content-between">
         <div>
-        {{#showmycreditslink}}
-            <a class="btn btn-secondary btn-sm" href="{{ mycreditsurl }}">
-                {{#str}}mycredits, block_credits{{/str}}
-            </a>
-        {{/showmycreditslink}}
+
+        {{#hasexpiringcredits}}
+        <div class="mt-3">
+            <h4 class="h5 m-0 mb-1">{{#str}}expiringsoon, block_credits{{/str}}</h4>
+            <table class="w-100">
+            {{#expiringcredits}}
+            <tr>
+                <td>{{#str}}ncredits, block_credits, {{credits}} {{/str}}</td>
+                <td class="text-right">{{{validuntilhtml}}}</td>
+            </tr>
+            {{/expiringcredits}}
+            </table>
         </div>
-        {{#canaudit}}
-        <div>
-            <a class="btn btn-secondary btn-sm" href="{{ manageurl }}">
-            {{#canmanage}}
-                {{#str}}manage, block_credits{{/str}}
-            {{/canmanage}}
-            {{^canmanage}}
-                {{#str}}viewall, block_credits{{/str}}
-            {{/canmanage}}
-            </a>
+        {{/hasexpiringcredits}}
+
+        {{#showactions}}
+        <div class="d-flex mt-3 justify-content-between">
+            <div>
+            {{#showmycreditslink}}
+                <a class="btn btn-secondary btn-sm" href="{{ mycreditsurl }}">
+                    {{#str}}mycredits, block_credits{{/str}}
+                </a>
+            {{/showmycreditslink}}
+            </div>
+            {{#canaudit}}
+            <div>
+                <a class="btn btn-secondary btn-sm" href="{{ manageurl }}">
+                {{#canmanage}}
+                    {{#str}}manage, block_credits{{/str}}
+                {{/canmanage}}
+                {{^canmanage}}
+                    {{#str}}viewall, block_credits{{/str}}
+                {{/canmanage}}
+                </a>
+            </div>
+            {{/canaudit}}
         </div>
-        {{/canaudit}}
-    </div>
-    {{/showactions}}
+        {{/showactions}}
+    {{/canaudit}}
+
+    {{! Staff view. }}
+    {{#canaudit}}
+        <div class="d-flex mt-3 justify-content-between">
+            {{#showmycreditslink}}
+            <div>
+                <a class="btn btn-secondary btn-sm" href="{{ mycreditsurl }}">
+                    {{#str}}mycredits, block_credits{{/str}}
+                </a>
+            </div>
+            {{/showmycreditslink}}
+            <div>
+                <a class="btn btn-secondary btn-sm" href="{{ manageurl }}">
+                {{#canmanage}}
+                    {{#str}}manage, block_credits{{/str}}
+                {{/canmanage}}
+                {{^canmanage}}
+                    {{#str}}viewall, block_credits{{/str}}
+                {{/canmanage}}
+                </a>
+            </div>
+        </div>
+    {{/canaudit}}
+
 </div>
