@@ -17,7 +17,7 @@
 use block_credits\manager;
 
 /**
- * Language file.
+ * Block class.
  *
  * @package    block_credits
  * @copyright  2023 Institut français du Japon
@@ -32,6 +32,13 @@ class block_credits extends block_base {
      */
     public function init() {
         $this->title = get_string('pluginname', 'block_credits');
+    }
+
+    /**
+     * Whether has a config.
+     */
+    public function has_config() {
+        return true;
     }
 
     /**

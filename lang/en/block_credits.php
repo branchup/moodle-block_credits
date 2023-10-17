@@ -43,6 +43,7 @@ $string['credits:view'] = 'View credits';
 $string['credits:viewall'] = 'View anybody\'s credits';
 $string['credits'] = 'Credits';
 $string['creditshistory'] = 'Credits history';
+$string['downloadtxs'] = 'Download transactions';
 $string['expired'] = 'Expired';
 $string['expirenow'] = 'Expire now';
 $string['expiringsoon'] = 'Expiring soon';
