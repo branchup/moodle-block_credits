@@ -27,7 +27,6 @@ defined('MOODLE_INTERNAL') || die();
 
 $string['actinguserid'] = 'ID utilisateur actif';
 $string['addcredits'] = 'Ajouter des crédits';
-$string['alreadyexipired'] = 'Expiré';
 $string['amount'] = 'Montant';
 $string['available'] = 'Disponible';
 $string['balance'] = 'Silde';

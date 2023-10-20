@@ -28,7 +28,6 @@ defined('MOODLE_INTERNAL') || die();
 $string['actinguserid'] = 'Acting user';
 $string['addcredits'] = 'Add credits';
 $string['adjustquantity'] = 'Adjust quantity';
-$string['alreadyexipired'] = 'Already expired';
 $string['amount'] = 'Amount';
 $string['available'] = 'Available';
 $string['balance'] = 'Balance';
@@ -45,10 +44,24 @@ $string['credits:view'] = 'View credits';
 $string['credits:viewall'] = 'View anybody\'s credits';
 $string['credits'] = 'Credits';
 $string['creditshistory'] = 'Credits history';
+$string['csvfile'] = 'CSV file';
+$string['csvfile_help'] = 'Upload a CSV file containing the following columns:
+
+- userid: (required) The user ID to credits coins to
+- amount: (required) The amount of coins to credit
+- validuntil: (required) The date until which the credits can be used, in format YYYY-MM-DD
+- publicnote: (optional) A public note
+- privatenote: (optional) A private note';
+$string['csvfieldseparator'] = 'CSV field separator';
 $string['downloadtxs'] = 'Download transactions';
 $string['expired'] = 'Expired';
 $string['expirenow'] = 'Expire now';
 $string['expiringsoon'] = 'Expiring soon';
+$string['import'] = 'Import';
+$string['importcredits'] = 'Import credits';
+$string['importingxfory'] = 'Importing {$a->amount} credits for {$a->name}.';
+$string['importlinenskippedmissing'] = 'Line {$a} skipped: invalid user, or amount.';
+$string['importresults'] = 'Import results';
 $string['history'] = 'History';
 $string['label'] = 'Label';
 $string['manage'] = 'Manage';
@@ -69,6 +82,7 @@ $string['purchase'] = 'Purchase';
 $string['reason'] = 'Reason';
 $string['reasonexpired'] = 'Credits expired.';
 $string['reasonextended'] = 'Credit validity changed from {$a->from} to {$a->to}.';
+$string['reasonimported'] = 'Credits imported by administrator.';
 $string['reasonother'] = 'Credit update.';
 $string['reasonpurchase'] = 'Credits purchased, valid until {$a->validuntil}.';
 $string['reasonrefundafterexpiry'] = 'Credits returned after their expiry.';

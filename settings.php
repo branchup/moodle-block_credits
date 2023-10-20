@@ -25,8 +25,11 @@
 
 $settings = new admin_category('block_credits_category', get_string('pluginname', 'block_credits'));
 
-$exportspage = new admin_externalpage('block_credits_export_txs', get_string('downloadtxs', 'block_credits'),
-    new moodle_url('/blocks/credits/settings_export_txs.php'));
+$settingspage = new admin_externalpage('block_credits_import', get_string('importcredits', 'block_credits'),
+    new moodle_url('/blocks/credits/settings_import.php'));
+$settings->add('block_credits_category', $settingspage);
 
-$settings->add('block_credits_category', $exportspage);
+$settingspage = new admin_externalpage('block_credits_export_txs', get_string('downloadtxs', 'block_credits'),
+    new moodle_url('/blocks/credits/settings_export_txs.php'));
+$settings->add('block_credits_category', $settingspage);
 
