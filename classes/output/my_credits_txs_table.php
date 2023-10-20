@@ -133,7 +133,9 @@ class my_credits_txs_table extends \table_sql {
     }
 
     public function get_sort_columns() {
-        return ['recordedon' => SORT_DESC, 'id' => SORT_DESC];
+        $sortcols = parent::get_sort_columns();
+        $dir = $sortcols['recordedon'] ?? SORT_DESC;
+        return ['recordedon' => $dir, 'id' => $dir];
     }
 
     protected function get_reason_from_row($row) {

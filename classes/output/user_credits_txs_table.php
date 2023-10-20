@@ -161,6 +161,12 @@ class user_credits_txs_table extends \table_sql {
         return userdate($row->recordedon, get_string('strftimedatetimeshortaccurate', 'core_langconfig'));
     }
 
+    public function get_sort_columns() {
+        $sortcols = parent::get_sort_columns();
+        $dir = $sortcols['recordedon'] ?? SORT_DESC;
+        return ['recordedon' => $dir, 'id' => $dir];
+    }
+
     protected function get_reason_from_row($row) {
         if (!isset($row->_reason)) {
             $reason = null;
