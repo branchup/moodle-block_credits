@@ -97,15 +97,17 @@ if (!empty($availablebuckets)) {
     $table = new html_table();
     $table->head = [
         get_string("creditedon", 'block_credits'),
-        get_string('available', 'block_credits'),
         get_string('total', 'block_credits'),
+        get_string('used', 'block_credits'),
+        get_string('available', 'block_credits'),
         get_string('validuntil', 'block_credits')
     ];
     foreach ($availablebuckets as $bucket) {
         $table->data[] = [
             userdate($bucket->creditedon, get_string('strftimedate', 'core_langconfig')),
-            $bucket->remaining,
             $bucket->total,
+            $bucket->used,
+            $bucket->remaining,
             userdate($bucket->validuntil, get_string('strftimedate', 'core_langconfig')),
         ];
     }
@@ -120,17 +122,17 @@ if (!empty($unavailablebuckets)) {
     $table = new html_table();
     $table->head = [
         get_string("creditedon", 'block_credits'),
+        get_string('total', 'block_credits'),
         get_string('used', 'block_credits'),
         get_string('expired', 'block_credits'),
-        get_string('total', 'block_credits'),
         get_string('validuntil', 'block_credits')
     ];
     foreach ($unavailablebuckets as $bucket) {
         $table->data[] = [
             userdate($bucket->creditedon, get_string('strftimedate', 'core_langconfig')),
+            $bucket->total,
             $bucket->used,
             $bucket->expired,
-            $bucket->total,
             userdate($bucket->validuntil, get_string('strftimedate', 'core_langconfig')),
         ];
     }
