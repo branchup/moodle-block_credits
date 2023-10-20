@@ -52,6 +52,14 @@ export const registerAddCreditButton = (selector) => {
   });
 };
 
+export const delegateAdjustTotalButton = (regionSelector, selector) => {
+  delegateClick(regionSelector, selector, (target) => {
+    const creditId = target.dataset.creditid;
+    const pageCtxId = target.dataset.pagectxid;
+    openAdjustTotalModal(creditId, pageCtxId);
+  });
+};
+
 export const delegateExtendValidityButton = (regionSelector, selector) => {
   delegateClick(regionSelector, selector, (target) => {
     const creditId = target.dataset.creditid;
@@ -73,6 +81,22 @@ const openAddCreditModal = (userId, pageCtxId) => {
     formClass: 'block_credits\\form\\credit_user_dynamic_form',
     modalConfig: {scrollable: false, title: getString('addcredits', 'block_credits')},
     args: {userid: userId, lockuser: userId > 0, pagectxid: pageCtxId},
+  });
+  modal.addEventListener(modal.events.FORM_SUBMITTED, function(e) {
+    if (e.detail.redirecturl) {
+      window.location.href = e.detail.redirecturl;
+    } else {
+      window.location.reload();
+    }
+  });
+  modal.show();
+};
+
+const openAdjustTotalModal = (creditId, pageCtxId) => {
+  const modal = new ModalForm({
+    formClass: 'block_credits\\form\\adjust_total_dynamic_form',
+    modalConfig: {scrollable: false, title: getString('adjustquantity', 'block_credits')},
+    args: {creditid: creditId, pagectxid: pageCtxId},
   });
   modal.addEventListener(modal.events.FORM_SUBMITTED, function(e) {
     if (e.detail.redirecturl) {

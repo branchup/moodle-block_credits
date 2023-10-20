@@ -118,6 +118,11 @@ class user_credits_table extends \table_sql {
         ]), null, get_string('transactions', 'block_credits')));
 
         if ($this->canmanage && $row->validuntil > time()) {
+            $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('adjustquantity', 'block_credits'), [
+                'data-creditid' => $row->id,
+                'data-pagectxid' => $this->pagectxid,
+                'data-action' => 'adjustotal',
+            ]));
             $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('extendvalidity', 'block_credits'), [
                 'data-creditid' => $row->id,
                 'data-pagectxid' => $this->pagectxid,

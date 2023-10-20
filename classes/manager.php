@@ -102,6 +102,60 @@ class manager {
     }
 
     /**
+     * Adjust bucket total.
+     *
+     * @param int $bucketid The bucket ID.
+     * @param int $newtotal The new total.
+     * @param note|null $note The note.
+     */
+    public function adjust_bucket_total($bucketid, $newtotal, note $note = null) {
+        global $DB, $USER;
+
+        $bucket = $DB->get_record('block_credits', ['id' => $bucketid], '*', MUST_EXIST);
+        if ($newtotal == $bucket->total) {
+            return;
+        }
+
+        if ($bucket->validuntil < time()) {
+            throw new \coding_exception('Bucket has expired');
+        }
+        if ($newtotal < $bucket->used + $bucket->expired) {
+            throw new \coding_exception('Cannot reduce total below used/expired credits');
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+        $prevtotal = $bucket->total;
+        $change = $newtotal - $bucket->total;
+        $bucket->total = $newtotal;
+        $bucket->remaining = max(0, $bucket->remaining + $change);
+        $DB->update_record('block_credits', $bucket);
+
+        $reason = new credits_reason('reasontotalchanged', [
+            'from' => $prevtotal,
+            'to' => $bucket->total,
+        ]);
+        $reasondesc = $reason->get_description();
+        if ($reasondesc instanceof \lang_string) {
+            $reasondesc = $reasondesc->out('en');
+        }
+        $tx = (object) [
+            'creditid' => $bucketid,
+            'userid' => $bucket->userid,
+            'actinguserid' => $USER->id,
+            'amount' => $change,
+            'component' => $reason->get_component(),
+            'reasoncode' => $reason->get_code(),
+            'reasonargs' => json_encode($reason->get_args()),
+            'reasondesc' => $reasondesc,
+            'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
+            'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
+            'recordedon' => time(),
+        ];
+        $DB->insert_record('block_credits_tx', $tx);
+        $DB->commit_delegated_transaction($transaction);
+    }
+
+    /**
      * Check for expired credits.
      *
      * This will expire credits that are past their expiry date if needed.
