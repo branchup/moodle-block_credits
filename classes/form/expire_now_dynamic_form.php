@@ -97,6 +97,9 @@ class expire_now_dynamic_form extends dynamic_form {
         } else if ($bucket->remaining <= 0) {
             throw new \moodle_exception('nocreditstoexpire', 'block_credits');
         }
+
+        // Disabled, the preferred method is adjusting the quantity.
+        throw new \coding_exception('Feature disabled');
     }
 
     /**
