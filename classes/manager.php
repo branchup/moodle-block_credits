@@ -134,10 +134,6 @@ class manager {
             'from' => $prevtotal,
             'to' => $bucket->total,
         ]);
-        $reasondesc = $reason->get_description();
-        if ($reasondesc instanceof \lang_string) {
-            $reasondesc = $reasondesc->out('en');
-        }
         $tx = (object) [
             'creditid' => $bucketid,
             'userid' => $bucket->userid,
@@ -146,12 +142,85 @@ class manager {
             'component' => $reason->get_component(),
             'reasoncode' => $reason->get_code(),
             'reasonargs' => json_encode($reason->get_args()),
-            'reasondesc' => $reasondesc,
+            'reasondesc' => static::get_static_reason_desc($reason),
             'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
             'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
             'recordedon' => time(),
         ];
         $DB->insert_record('block_credits_tx', $tx);
+        $DB->commit_delegated_transaction($transaction);
+    }
+
+    /**
+     * Change bucket validity.
+     *
+     * @param int $bucketid The credit bucket.
+     * @param DateTimeImmutable $validuntil The date.
+     * @param note|null $note The note.
+     */
+    public function change_bucket_validity($bucketid, DateTimeImmutable $validuntil, note $note = null) {
+        global $DB, $USER;
+
+        $bucket = $DB->get_record('block_credits', ['id' => $bucketid], '*', MUST_EXIST);
+        if ($validuntil->getTimestamp() == $bucket->validuntil) {
+            return;
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+
+        $prevvaliduntil = new DateTimeImmutable('@' . $bucket->validuntil);
+        $bucket->validuntil = $validuntil->getTimestamp();
+        $DB->update_record('block_credits', $bucket);
+
+        $reason = new credits_reason('reasonextended', [
+            'from' => $prevvaliduntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
+            'to' => $validuntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
+        ]);
+        $tx = (object) [
+            'creditid' => $bucket->id,
+            'userid' => $bucket->userid,
+            'actinguserid' => $USER->id,
+            'amount' => 0,
+            'component' => $reason->get_component(),
+            'reasoncode' => $reason->get_code(),
+            'reasonargs' => json_encode($reason->get_args()),
+            'reasondesc' => static::get_static_reason_desc($reason),
+            'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
+            'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
+            'recordedon' => time(),
+        ];
+        $DB->insert_record('block_credits_tx', $tx);
+
+        // If we set the value in the future, and credits had expired, restore them.
+        if ($bucket->expired > 0 && $validuntil->getTimestamp() > time()) {
+            $amount = $bucket->expired;
+            $bucket->remaining += $amount;
+            $bucket->expired = 0;
+            $DB->update_record('block_credits', $bucket);
+
+            // Transaction for the revival.
+            $reason = new credits_reason('reasonrevived');
+            $tx = (object) [
+                'creditid' => $bucket->id,
+                'userid' => $bucket->userid,
+                'actinguserid' => $USER->id,
+                'amount' => $amount,
+                'component' => $reason->get_component(),
+                'reasoncode' => $reason->get_code(),
+                'reasonargs' => json_encode($reason->get_args()),
+                'reasondesc' => static::get_static_reason_desc($reason),
+                'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
+                'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
+                'recordedon' => time(),
+            ];
+            $DB->insert_record('block_credits_tx', $tx);
+        }
+
+        // If we set the value in the past, always ensure credits are expired.
+        if ($validuntil->getTimestamp() <= time() && $bucket->remaining > 0) {
+            $this->expire_credit_bucket($bucket, new credits_reason('reasonexpired'));
+        }
+
         $DB->commit_delegated_transaction($transaction);
     }
 
@@ -204,10 +273,6 @@ class manager {
         ];
         $creditid = $DB->insert_record('block_credits', $record);
 
-        $reasondesc = $reason->get_description();
-        if ($reasondesc instanceof \lang_string) {
-            $reasondesc = $reasondesc->out('en');
-        }
         $tx = (object) [
             'creditid' => $creditid,
             'userid' => $userid,
@@ -216,7 +281,7 @@ class manager {
             'component' => $reason->get_component(),
             'reasoncode' => $reason->get_code(),
             'reasonargs' => json_encode($reason->get_args()),
-            'reasondesc' => $reasondesc,
+            'reasondesc' => static::get_static_reason_desc($reason),
             'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
             'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
             'recordedon' => time(),
@@ -246,10 +311,6 @@ class manager {
         $bucket->validuntil = min($bucket->validuntil, time()); // If we expire early, use current time.
         $DB->update_record('block_credits', $bucket);
 
-        $reasondesc = $reason->get_description();
-        if ($reasondesc instanceof \lang_string) {
-            $reasondesc = $reasondesc->out('en');
-        }
         $tx = (object) [
             'creditid' => $bucket->id,
             'userid' => $bucket->userid,
@@ -258,56 +319,7 @@ class manager {
             'component' => $reason->get_component(),
             'reasoncode' => $reason->get_code(),
             'reasonargs' => json_encode($reason->get_args()),
-            'reasondesc' => $reasondesc,
-            'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
-            'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
-            'recordedon' => time(),
-        ];
-        $DB->insert_record('block_credits_tx', $tx);
-
-        $DB->commit_delegated_transaction($transaction);
-    }
-
-    /**
-     * Extend the validity of credits.
-     *
-     * @param object $bucket The credit bucket.
-     * @param DateTimeImmutable $validuntil The date.
-     * @param note|null $note The note.
-     */
-    public function extend_credit_bucket_validity($bucket, DateTimeImmutable $validuntil, note $note = null) {
-        global $DB, $USER;
-        if ($bucket->validuntil < time()) {
-            throw new \coding_exception('Credit bucket already expired');
-        } else if ($validuntil->getTimestamp() < $bucket->validuntil) {
-            throw new \coding_exception('Cannot reduce validity');
-        } else if ($validuntil->getTimestamp() < time()) {
-            throw new \coding_exception('Cannot set validity in the past');
-        }
-
-        $transaction = $DB->start_delegated_transaction();
-
-        $prevvaliduntil = new DateTimeImmutable('@' . $bucket->validuntil);
-        $bucket->validuntil = $validuntil->getTimestamp();
-        $DB->update_record('block_credits', $bucket);
-
-        $reason = new credits_reason('reasonextended', [
-            'from' => $prevvaliduntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
-            'to' => $validuntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
-        ]);
-        $reasondesc = $reason->get_description();
-        if ($reasondesc instanceof \lang_string) {
-            $reasondesc = $reasondesc->out('en');
-        }
-        $tx = (object) [
-            'creditid' => $bucket->id,
-            'userid' => $bucket->userid,
-            'actinguserid' => $USER->id,
-            'amount' => 0,
-            'component' => $reason->get_component(),
-            'reasoncode' => $reason->get_code(),
-            'reasonargs' => json_encode($reason->get_args()),
-            'reasondesc' => $reasondesc,
+            'reasondesc' => static::get_static_reason_desc($reason),
             'publicnote' => ($note ? $note->get_public_note() : null) ?? '',
             'privatenote' => ($note ? $note->get_private_note() : null) ?? '',
             'recordedon' => time(),
@@ -406,12 +418,6 @@ class manager {
             throw new \coding_exception('Invalid number of credits to refund.');
         }
 
-        // Generate the description.
-        $reasondesc = $reason->get_description();
-        if ($reasondesc instanceof \lang_string) {
-            $reasondesc = $reasondesc->out('en');
-        }
-
         // Prepare filters to find buckets where we can refund.
         $filters = [
             'userid = :userid',
@@ -443,7 +449,7 @@ class manager {
                 'component' => $reason->get_component(),
                 'reasoncode' => $reason->get_code(),
                 'reasonargs' => json_encode($reason->get_args()),
-                'reasondesc' => $reasondesc,
+                'reasondesc' => static::get_static_reason_desc($reason),
                 'recordedon' => time(),
             ];
 
@@ -477,16 +483,12 @@ class manager {
                 'component' => $reason->get_component(),
                 'reasoncode' => $reason->get_code(),
                 'reasonargs' => json_encode($reason->get_args()),
-                'reasondesc' => $reasondesc,
+                'reasondesc' => static::get_static_reason_desc($reason),
                 'recordedon' => time(),
             ];
             $DB->insert_record('block_credits_tx', $tx);
 
             $reason = new credits_reason('reasonrefundafterexpiry');
-            $reasondesc = $reason->get_description();
-            if ($reasondesc instanceof \lang_string) {
-                $reasondesc = $reasondesc->out('en');
-            }
             $tx = (object) [
                 'creditid' => $bucket->id,
                 'userid' => $userid,
@@ -495,7 +497,7 @@ class manager {
                 'component' => $reason->get_component(),
                 'reasoncode' => $reason->get_code(),
                 'reasonargs' => json_encode($reason->get_args()),
-                'reasondesc' => $reasondesc,
+                'reasondesc' => static::get_static_reason_desc($reason),
                 'recordedon' => time(),
             ];
             $DB->insert_record('block_credits_tx', $tx);
@@ -516,12 +518,6 @@ class manager {
 
         if ($quantity <= 0) {
             throw new \coding_exception('Invalid number of credits to spend.');
-        }
-
-        // Generate the description.
-        $reasondesc = $reason->get_description();
-        if ($reasondesc instanceof \lang_string) {
-            $reasondesc = $reasondesc->out('en');
         }
 
         // Actual spending.
@@ -545,7 +541,7 @@ class manager {
                 'component' => $reason->get_component(),
                 'reasoncode' => $reason->get_code(),
                 'reasonargs' => json_encode($reason->get_args()),
-                'reasondesc' => $reasondesc,
+                'reasondesc' => static::get_static_reason_desc($reason),
                 'recordedon' => time(),
             ];
 
@@ -567,6 +563,21 @@ class manager {
         }
 
         $DB->commit_delegated_transaction($transaction);
+    }
+
+    /**
+     * Get a static version of the reason.
+     *
+     * This is a string that can be archived.
+     *
+     * @return string
+     */
+    public static function get_static_reason_desc(reason $reason) {
+        $reasondesc = $reason->get_description();
+        if ($reasondesc instanceof \lang_string) {
+            $reasondesc = $reasondesc->out('en');
+        }
+        return $reasondesc;
     }
 
     /**

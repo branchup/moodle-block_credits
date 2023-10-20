@@ -44,7 +44,7 @@ use moodle_url;
  * @author     Frédéric Massart <fred@branchup.tech>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class extend_validity_dynamic_form extends dynamic_form {
+class change_validity_dynamic_form extends dynamic_form {
 
     /** @var stdClass|null Bucket, use get_bucket to read. */
     protected $bucket;
@@ -62,8 +62,7 @@ class extend_validity_dynamic_form extends dynamic_form {
         $mform->setType('pagectxid', PARAM_INT);
 
         $mform->addElement('date_selector', 'validuntil', get_string('validuntil', 'block_credits'));
-        $mform->setDefault('validuntil', (new DateTimeImmutable('@' . $this->get_bucket()->validuntil))
-            ->add(new DateInterval("P1M"))->getTimestamp());
+        $mform->setDefault('validuntil', (new DateTimeImmutable('@' . $this->get_bucket()->validuntil))->getTimestamp());
 
         $mform->addElement('textarea', 'publicnote', get_string('publicnote', 'block_credits'), ['maxlength' => 255]);
         $mform->setType('publicnote', PARAM_RAW);
@@ -89,11 +88,6 @@ class extend_validity_dynamic_form extends dynamic_form {
     protected function check_access_for_dynamic_submission(): void {
         $manager = manager::instance();
         $manager->require_manage_user($this->get_user_id(), $this->get_context_for_dynamic_submission());
-
-        $bucket = $this->get_bucket();
-        if ($bucket->validuntil < time()) {
-            throw new \moodle_exception('alreadyexpired', 'block_credits');
-        }
     }
 
     /**
@@ -111,7 +105,7 @@ class extend_validity_dynamic_form extends dynamic_form {
         $note = new static_note($data->publicnote, $data->privatenote);
 
         $manager = manager::instance();
-        $manager->extend_credit_bucket_validity($this->get_bucket(), $validuntil, $note);
+        $manager->change_bucket_validity($this->get_bucket()->id, $validuntil, $note);
 
         return [
             'redirecturl' => (new moodle_url('/blocks/credits/manage_user.php',
@@ -175,10 +169,6 @@ class extend_validity_dynamic_form extends dynamic_form {
 
         if (empty($data)) {
             return $errors;
-        }
-
-        if ($data['validuntil'] < time() || $data['validuntil'] < $this->get_bucket()->validuntil) {
-            $errors['validuntil'] = get_string('invaliddata', 'core_error');
         }
 
         return $errors;

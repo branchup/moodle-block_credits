@@ -106,8 +106,8 @@ if ($view === 'tx') {
     echo html_writer::end_div();
 
     $PAGE->requires->js_call_amd('block_credits/modals', 'delegateAdjustTotalButton', ['body', '[data-action=adjustotal]']);
+    $PAGE->requires->js_call_amd('block_credits/modals', 'delegateChangeValidityButton', ['body', '[data-action=changevalidity]']);
     $PAGE->requires->js_call_amd('block_credits/modals', 'delegateExpireNowButton', ['body', '[data-action=expirenow]']);
-    $PAGE->requires->js_call_amd('block_credits/modals', 'delegateExtendValidityButton', ['body', '[data-action=extendvalidity]']);
 }
 
 echo $OUTPUT->footer();

@@ -60,11 +60,11 @@ export const delegateAdjustTotalButton = (regionSelector, selector) => {
   });
 };
 
-export const delegateExtendValidityButton = (regionSelector, selector) => {
+export const delegateChangeValidityButton = (regionSelector, selector) => {
   delegateClick(regionSelector, selector, (target) => {
     const creditId = target.dataset.creditid;
     const pageCtxId = target.dataset.pagectxid;
-    openExtendValidityModal(creditId, pageCtxId);
+    openChangeValidityModal(creditId, pageCtxId);
   });
 };
 
@@ -108,10 +108,10 @@ const openAdjustTotalModal = (creditId, pageCtxId) => {
   modal.show();
 };
 
-const openExtendValidityModal = (creditId, pageCtxId) => {
+const openChangeValidityModal = (creditId, pageCtxId) => {
   const modal = new ModalForm({
-    formClass: 'block_credits\\form\\extend_validity_dynamic_form',
-    modalConfig: {scrollable: false, title: getString('extendvalidity', 'block_credits')},
+    formClass: 'block_credits\\form\\change_validity_dynamic_form',
+    modalConfig: {scrollable: false, title: getString('changevalidity', 'block_credits')},
     args: {creditid: creditId, pagectxid: pageCtxId},
   });
   modal.addEventListener(modal.events.FORM_SUBMITTED, function(e) {
