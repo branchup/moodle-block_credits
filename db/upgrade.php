@@ -34,5 +34,35 @@ function xmldb_block_credits_upgrade($oldversion) {
 
     $dbman = $DB->get_manager();
 
+    if ($oldversion < 2023102000) {
+
+        // Define field operationid to be added to block_credits_tx.
+        $table = new xmldb_table('block_credits_tx');
+        $field = new xmldb_field('operationid', XMLDB_TYPE_CHAR, '64', null, null, null, null, 'recordedon');
+
+        // Conditionally launch add field operationid.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Credits savepoint reached.
+        upgrade_block_savepoint(true, 2023102000, 'credits');
+    }
+
+    if ($oldversion < 2023102001) {
+
+        // Define index operationid (not unique) to be added to block_credits_tx.
+        $table = new xmldb_table('block_credits_tx');
+        $index = new xmldb_index('operationid', XMLDB_INDEX_NOTUNIQUE, ['operationid']);
+
+        // Conditionally launch add index operationid.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Credits savepoint reached.
+        upgrade_block_savepoint(true, 2023102001, 'credits');
+    }
+
     return true;
 }

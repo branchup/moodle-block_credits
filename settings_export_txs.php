@@ -71,6 +71,8 @@ $headers = [
     'acting_plugin',
     'reason_code',
     'reason_args',
+    'tx_id',
+    'tx_operation_id',
     'bucket_id',
     'bucket_total',
     'bucket_credited_on',
@@ -96,7 +98,9 @@ dataformat::download_data('credits-txs-' . date('Y-m-d'), 'csv', $headers, $reco
         $record->component, // acting_plugin
         $record->reasoncode, // reason_code
         $record->reasonargs, // reason_args
-        $record->creditid, // bucket_id
+        $record->id,
+        $record->operationid ?? '',
+        $record->creditid,
         $record->c_total, // bucket_total
         date('Y-m-d', $record->c_creditedon), // bucket_credited_on
         date('Y-m-d', $record->c_validuntil), // bucket_valid_until

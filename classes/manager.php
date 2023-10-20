@@ -29,6 +29,7 @@ use block_credits\local\note\note;
 use block_credits\local\reason\credits_reason;
 use block_credits\local\reason\reason;
 use context;
+use core\uuid;
 use core_date;
 use DateTimeImmutable;
 
@@ -404,6 +405,82 @@ class manager {
     }
 
     /**
+     * Refund from an operation ID.
+     *
+     * @param int $userid The user ID.
+     * @param string $operationid The operation ID.
+     * @param reason $reason The reason for the refund.
+     */
+    public function refund_from_operation_id($userid, $operationid, reason $reason) {
+        global $DB, $USER;
+
+        $operations = $DB->get_records('block_credits_tx', ['userid' => $userid, 'operationid' => $operationid],
+            'recordedon ASC, id ASC', '*');
+
+        if (empty($operations)) {
+            throw new \coding_exception('No transactions found for operation ID');
+        }
+
+        $transaction = $DB->start_delegated_transaction();
+        foreach ($operations as $op) {
+            if ($op->amount >= 0) { // We don't revert credits that were added.
+                continue;
+            }
+
+            $amount = abs($op->amount);
+            $bucket = $DB->get_record('block_credits', ['id' => $op->creditid], '*', MUST_EXIST);
+            $isexpired = $bucket->validuntil < time();
+
+            // Cap to min and max in case the same operation is refunded more than once by accident.
+            $bucket->used = max(0, $bucket->used - $amount);
+            if ($isexpired) {
+                $bucket->expired = min($bucket->total, $bucket->expired + $amount);
+            } else {
+                $bucket->remaining = min($bucket->total, $bucket->remaining + $amount);
+            }
+
+            $txs = [];
+            $txs[] = (object) [
+                'creditid' => $bucket->id,
+                'userid' => $userid,
+                'actinguserid' => $USER->id,
+                'amount' => $amount,
+                'component' => $reason->get_component(),
+                'reasoncode' => $reason->get_code(),
+                'reasonargs' => json_encode($reason->get_args()),
+                'reasondesc' => static::get_static_reason_desc($reason),
+                'recordedon' => time(),
+                'privatenote' => "[System] Reverse TX {$op->id}.",
+            ];
+
+            if ($isexpired) {
+                $reason = new credits_reason('reasonrefundafterexpiry');
+                $txs[] = (object) [
+                    'creditid' => $bucket->id,
+                    'userid' => $userid,
+                    'actinguserid' => $USER->id,
+                    'amount' => -$amount,
+                    'component' => $reason->get_component(),
+                    'reasoncode' => $reason->get_code(),
+                    'reasonargs' => json_encode($reason->get_args()),
+                    'reasondesc' => static::get_static_reason_desc($reason),
+                    'recordedon' => time(),
+                    'privatenote' => "[System] Reverse TX {$op->id}.",
+                ];
+            }
+
+            $DB->update_record('block_credits', $bucket);
+            foreach ($txs as $tx) {
+                $DB->insert_record('block_credits_tx', $tx);
+            }
+        }
+
+        // TODO Send alert when refunding expired, or close to expiry.
+
+        $DB->commit_delegated_transaction($transaction);
+    }
+
+    /**
      * Refund credits.
      *
      * @param int $userid The user ID.
@@ -512,6 +589,7 @@ class manager {
      * @param int $userid The user ID.
      * @param int $quantity The quantity.
      * @param reason $reason The reason.
+     * @return string The operation ID.
      */
     public function spend_user_credits($userid, $quantity, reason $reason) {
         global $DB, $USER;
@@ -519,6 +597,8 @@ class manager {
         if ($quantity <= 0) {
             throw new \coding_exception('Invalid number of credits to spend.');
         }
+
+        $opid = uuid::generate();
 
         // Actual spending.
         $transaction = $DB->start_delegated_transaction();
@@ -543,6 +623,7 @@ class manager {
                 'reasonargs' => json_encode($reason->get_args()),
                 'reasondesc' => static::get_static_reason_desc($reason),
                 'recordedon' => time(),
+                'operationid' => $opid
             ];
 
             $DB->update_record('block_credits', $bucket);
@@ -563,6 +644,8 @@ class manager {
         }
 
         $DB->commit_delegated_transaction($transaction);
+
+        return $opid;
     }
 
     /**
