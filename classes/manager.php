@@ -359,13 +359,17 @@ class manager {
     /**
      * Get the credit buckets available.
      *
+     * This returns the buckets sorted by closest validity to farthest.
+     *
      * @param int $userid The user ID.
+     * @param \DateTimeImmutable $dt The time at which the buckets must available.
      * @return object[]
      */
-    public function get_buckets_available($userid) {
+    public function get_buckets_available($userid, \DateTimeImmutable $dt = null) {
         global $DB;
+        $validuntil = $dt ? $dt->getTimestamp() : time();
         return $DB->get_records_select('block_credits', 'remaining > 0 AND userid = ? AND validuntil >= ?',
-            [$userid, time()], 'validuntil ASC');
+            [$userid, $validuntil], 'validuntil ASC');
     }
 
     /**
@@ -589,9 +593,10 @@ class manager {
      * @param int $userid The user ID.
      * @param int $quantity The quantity.
      * @param reason $reason The reason.
+     * @param DateTimeImmutable|null $validasat The date at which credits must be available.
      * @return string The operation ID.
      */
-    public function spend_user_credits($userid, $quantity, reason $reason) {
+    public function spend_user_credits($userid, $quantity, reason $reason, DateTimeImmutable $validasat = null) {
         global $DB, $USER;
 
         if ($quantity <= 0) {
@@ -602,8 +607,7 @@ class manager {
 
         // Actual spending.
         $transaction = $DB->start_delegated_transaction();
-        $buckets = $DB->get_records_select('block_credits', 'userid = ? AND remaining > 0 AND validuntil > ?',
-            [$userid, time()], 'validuntil ASC');
+        $buckets = $this->get_buckets_available($userid, $validasat);
         $remainingtospend = $quantity;
         foreach ($buckets as $bucket) {
             $available = (int) $bucket->remaining;
