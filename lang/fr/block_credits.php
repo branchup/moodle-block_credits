@@ -51,6 +51,7 @@ $string['history'] = 'Historique';
 $string['label'] = 'Label';
 $string['manage'] = 'Gérer les crédits';
 $string['mycredits'] = 'Mes crédits';
+$string['myongoingcredits'] = 'Mes crédits en cours';
 $string['ncredits'] = '{$a} crédit(s)';
 $string['note'] = 'Note';
 $string['nocreditstoexpire'] = 'Pas assez de crédits ({$a->available}/{$a->required}).';

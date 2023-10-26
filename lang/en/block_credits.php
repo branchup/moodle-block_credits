@@ -66,6 +66,7 @@ $string['history'] = 'History';
 $string['label'] = 'Label';
 $string['manage'] = 'Manage';
 $string['mycredits'] = 'My credits';
+$string['myongoingcredits'] = 'My ongoing credits';
 $string['ncredits'] = '{$a} credit(s)';
 $string['newtotal'] = 'New total';
 $string['newtotal_help'] = 'Specify the new total amount of credits. This value cannot fall below the number of credits already consumed.';

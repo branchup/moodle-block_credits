@@ -84,7 +84,7 @@ $txurl = new moodle_url($baseurl, ['view' => 'tx']);
 
 echo html_writer::start_div('d-flex flex-row justify-content-between');
 echo html_writer::start_div();
-echo $OUTPUT->heading(get_string('mycredits', 'block_credits'), 3);
+echo $OUTPUT->heading(get_string('myongoingcredits', 'block_credits'), 3);
 echo html_writer::end_div();
 echo html_writer::start_div();
 if ($manager->has_ever_had_any_credits($USER->id)) {
