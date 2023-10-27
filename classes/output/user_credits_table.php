@@ -125,11 +125,13 @@ class user_credits_table extends \table_sql {
             ]));
         }
 
-        $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('changevalidity', 'block_credits'), [
-            'data-creditid' => $row->id,
-            'data-pagectxid' => $this->pagectxid,
-            'data-action' => 'changevalidity',
-        ]));
+        if ($this->canmanage) {
+            $menu->add(new action_menu_link_secondary(new moodle_url('#'), null, get_string('changevalidity', 'block_credits'), [
+                'data-creditid' => $row->id,
+                'data-pagectxid' => $this->pagectxid,
+                'data-action' => 'changevalidity',
+            ]));
+        }
 
         // Expiring now is disabled in favour of adjusting the total.
         // if ($this->canmanage && $row->remaining > 0) {
