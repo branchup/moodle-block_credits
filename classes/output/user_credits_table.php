@@ -26,12 +26,7 @@
 namespace block_credits\output;
 
 use action_menu;
-use action_menu_link;
 use action_menu_link_secondary;
-use core_date;
-use core_user\fields;
-use DateTimeImmutable;
-use html_writer;
 use moodle_url;
 
 defined('MOODLE_INTERNAL') || die();

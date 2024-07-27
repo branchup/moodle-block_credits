@@ -25,6 +25,8 @@
 
 namespace block_credits\form;
 
+defined('MOODLE_INTERNAL') || die();
+
 require_once($CFG->libdir . '/csvlib.class.php');
 require_once($CFG->libdir . '/formslib.php');
 

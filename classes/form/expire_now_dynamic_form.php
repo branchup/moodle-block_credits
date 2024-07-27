@@ -25,8 +25,6 @@
 
 namespace block_credits\form;
 
-defined('MOODLE_INTERNAL') || die();
-
 use block_credits\local\note\static_note;
 use block_credits\local\reason\credits_reason;
 use block_credits\manager;

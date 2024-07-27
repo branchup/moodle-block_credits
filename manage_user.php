@@ -34,7 +34,7 @@ $contextid = optional_param('ctxid', SYSCONTEXTID, PARAM_INT);
 $creditid = optional_param('creditid', null, PARAM_INT);
 $view = optional_param('view', 'credits', PARAM_ALPHANUMEXT);
 
-$context = context::instance_by_id($contextid);
+$context = \core\context::instance_by_id($contextid);
 
 $baseparams = ['ctxid' => $contextid, 'id' => $userid];
 $baseurl = new moodle_url('/blocks/credits/manage_user.php', $baseparams);

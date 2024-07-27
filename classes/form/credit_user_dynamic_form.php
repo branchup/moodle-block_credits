@@ -25,8 +25,6 @@
 
 namespace block_credits\form;
 
-defined('MOODLE_INTERNAL') || die();
-
 use block_credits\local\note\static_note;
 use block_credits\local\reason\credits_reason;
 use block_credits\manager;
@@ -88,7 +86,7 @@ class credit_user_dynamic_form extends dynamic_form {
                 'valuehtmlcallback' => function($userid) {
                     global $OUTPUT;
 
-                    $context = \context_system::instance();
+                    $context = \core\context\system::instance();
                     $fields = \core_user\fields::for_name()->with_identity($context, false);
                     $record = \core_user::get_user($userid, 'id' . $fields->get_sql()->selects);
 

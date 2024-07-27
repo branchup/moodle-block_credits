@@ -31,7 +31,7 @@ require('../../config.php');
 $contextid = optional_param('ctxid', SYSCONTEXTID, PARAM_INT);
 $query = optional_param('q', null, PARAM_RAW);
 
-$context = context::instance_by_id($contextid);
+$context = \core\context::instance_by_id($contextid);
 $manager = manager::instance();
 
 $url = new moodle_url('/blocks/credits/manage_users.php', ['ctxid' => $contextid, 'query' => $query]);

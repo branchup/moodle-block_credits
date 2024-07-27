@@ -46,7 +46,7 @@ class block_credits extends block_base {
      */
     public function hide_header() {
         // Staff see the header because the content is different for them.
-        $context = $this->page->context->get_course_context(false) ?: context_system::instance();
+        $context = $this->page->context->get_course_context(false) ?: \core\context\system::instance();
         $manager = manager::instance();
         return !$manager->can_audit($context);
     }
@@ -66,7 +66,7 @@ class block_credits extends block_base {
         $manager = manager::instance();
         $manager->check_for_expired_credits($USER->id);
 
-        $context = $this->page->context->get_course_context(false) ?: context_system::instance();
+        $context = $this->page->context->get_course_context(false) ?: \core\context\system::instance();
 
         $expiringbuckets = $manager->get_buckets_expiring_before($USER->id, new DateTimeImmutable('+45 days'));
         $mycreditsurl = new moodle_url('/blocks/credits/my.php', ['ctxid' => $context->id]);

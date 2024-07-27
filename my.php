@@ -31,7 +31,7 @@ require('../../config.php');
 $contextid = optional_param('ctxid', SYSCONTEXTID, PARAM_INT);
 $view = optional_param('view', 'credits', PARAM_ALPHANUMEXT);
 
-$context = context::instance_by_id($contextid);
+$context = \core\context::instance_by_id($contextid);
 
 $baseurl = new moodle_url('/blocks/credits/my.php', ['ctxid' => $contextid]);
 $url = new moodle_url($baseurl, ['view' => $view]);

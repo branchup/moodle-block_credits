@@ -28,12 +28,11 @@ namespace block_credits\external;
 use block_credits\local\note\static_note;
 use block_credits\local\reason\credits_reason;
 use block_credits\manager;
-use context_system;
 use core_date;
 use DateTimeImmutable;
-use external_api;
-use external_function_parameters;
-use external_value;
+use core_external\external_api;
+use core_external\external_function_parameters;
+use core_external\external_value;
 
 /**
  * External function.
@@ -66,7 +65,7 @@ class credit_user_for_purchase extends external_api {
         $validuntil = $params['validuntil'];
         $reference = $params['reference'];
 
-        $context = context_system::instance();
+        $context = \core\context\system::instance();
         static::validate_context($context);
 
         $manager = manager::instance();

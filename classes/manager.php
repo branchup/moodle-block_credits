@@ -50,15 +50,19 @@ class manager {
      * Whether the current user can audit someone.
      *
      * We either have access to everyone, or manage permissions.
+     *
+     * @param \context|\core\context $context The context.
      */
-    public function can_audit(context $context) {
+    public function can_audit($context) {
         return has_any_capability(['block/credits:manage', 'block/credits:viewall'], $context);
     }
 
     /**
      * Whether the current user has manage permissions.
+     *
+     * @param \context|\core\context $context The context.
      */
-    public function can_manage(context $context) {
+    public function can_manage($context) {
         return has_capability('block/credits:manage', $context);
     }
 
@@ -66,8 +70,10 @@ class manager {
      * Requires current user to be allowed to audit someone.
      *
      * We either have access to everyone, or manage permissions.
+     *
+     * @param \context|\core\context $context The context.
      */
-    public function require_audit(context $context) {
+    public function require_audit($context) {
         if (!$this->can_audit($context)) {
             require_capability('block/credits:viewall', $context);
         }
@@ -75,8 +81,11 @@ class manager {
 
     /**
      * Requires current user to have audit permission over user.
+     *
+     * @param int $userid The user ID.
+     * @param \context|\core\context $context The context.
      */
-    public function require_audit_user($userid, context $context) {
+    public function require_audit_user($userid, $context) {
         $this->require_audit($context);
         $coursecontext = $context->get_course_context(false);
         if ($coursecontext && $coursecontext->instanceid != SITEID && !is_enrolled($coursecontext, $userid)) {
@@ -86,15 +95,20 @@ class manager {
 
     /**
      * Requires current user to have manage permission.
+     *
+     * @param \context|\core\context $context The context.
      */
-    public function require_manage(context $context) {
+    public function require_manage($context) {
         require_capability('block/credits:manage', $context);
     }
 
     /**
      * Requires current user to have manage permission over user.
+     *
+     * @param int $userid The user ID.
+     * @param \context|\core\context $context The context.
      */
-    public function require_manage_user($userid, context $context) {
+    public function require_manage_user($userid, $context) {
         $this->require_manage($context);
         $coursecontext = $context->get_course_context(false);
         if ($coursecontext && $coursecontext->instanceid != SITEID && !is_enrolled($coursecontext, $userid)) {

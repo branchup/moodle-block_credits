@@ -25,15 +25,10 @@
 
 namespace block_credits\form;
 
-defined('MOODLE_INTERNAL') || die();
-
 use block_credits\local\note\static_note;
 use block_credits\manager;
 use context;
-use core_date;
 use core_form\dynamic_form;
-use DateInterval;
-use DateTimeImmutable;
 use moodle_url;
 
 /**
