@@ -145,10 +145,8 @@ class user_credits_txs_table extends \table_sql {
         if (!$row->privatenote) {
             return '-';
         }
-        return html_writer::tag('a', $OUTPUT->render_from_template('block_credits/icon-note', []), [
+        return html_writer::tag('button', $OUTPUT->render_from_template('block_credits/icon-note', []), [
             'class' => 'btn btn-link p-0 text-left text-body',
-            'href' => '#',
-            'role' => 'button',
             'data-container' => 'body',
             'data-toggle' => 'popover',
             'data-content' => nl2br(s($row->privatenote)),
