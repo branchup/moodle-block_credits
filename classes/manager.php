@@ -67,6 +67,16 @@ class manager {
     }
 
     /**
+     * Get the renderer.
+     *
+     * @return \block_credits\output\renderer
+     */
+    public function get_renderer() {
+        global $PAGE;
+        return $PAGE->get_renderer('block_credits');
+    }
+
+    /**
      * Requires current user to be allowed to audit someone.
      *
      * We either have access to everyone, or manage permissions.

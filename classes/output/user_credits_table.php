@@ -98,13 +98,11 @@ class user_credits_table extends \table_sql {
     }
 
     public function col_actions($row) {
-        global $OUTPUT;
+        global $PAGE;
 
-        $menu = new action_menu();
-        $menu->prioritise = true;
-        $icon = $OUTPUT->pix_icon('i/menu', get_string('edit'));
-        $menu->set_menu_trigger($icon, 'btn btn-icon d-flex align-items-center justify-content-center block_credits-no-caret');
+        $output = $PAGE->get_renderer('block_credits');
 
+        $menu = $output->make_dropdown_menu();
         $menu->add(new action_menu_link_secondary(new moodle_url('/blocks/credits/manage_user.php', [
             'id' => $row->userid,
             'creditid' => $row->id,
@@ -137,7 +135,7 @@ class user_credits_table extends \table_sql {
         //     ]));
         // }
 
-        return $OUTPUT->render($menu);
+        return $output->render($menu);
     }
 
 }

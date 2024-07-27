@@ -30,6 +30,7 @@ require('../../config.php');
 
 $contextid = optional_param('ctxid', SYSCONTEXTID, PARAM_INT);
 $view = optional_param('view', 'credits', PARAM_ALPHANUMEXT);
+$creditid = optional_param('creditid', null, PARAM_INT);
 
 $context = \core\context::instance_by_id($contextid);
 
@@ -50,8 +51,9 @@ $PAGE->set_heading(format_string($COURSE->fullname));
 
 $manager = manager::instance();
 $manager->check_for_expired_credits($USER->id);
+$output = $manager->get_renderer();
 
-echo $OUTPUT->header();
+echo $output->header();
 
 if ($PAGE->has_secondary_navigation() && !$PAGE->secondarynav->has_children()) {
     $backurl = new moodle_url('/course/view.php', ['id' => $COURSE->id]);
@@ -65,16 +67,23 @@ if ($PAGE->has_secondary_navigation() && !$PAGE->secondarynav->has_children()) {
 
 if ($view === 'tx') {
     $backurl = new moodle_url($baseurl, ['view' => 'credits']);
-    echo $OUTPUT->render_from_template('block_credits/page_header', [
+    echo $output->render_from_template('block_credits/page_header', [
         'backurl' => $backurl->out(false),
         'title' => get_string('creditshistory', 'block_credits'),
     ]);
 
-    $table = new my_credits_txs_table($USER->id, $contextid);
+    if ($creditid) {
+        $removefilterurl = new moodle_url($url);
+        $removefilterurl->remove_params('creditid');
+        echo html_writer::tag('p', get_string('transactionsfiltered', 'block_credits')
+            . ' ' . html_writer::link($removefilterurl, get_string('removefilter', 'block_credits')));
+    }
+
+    $table = new my_credits_txs_table($USER->id, $contextid, $creditid);
     $table->define_baseurl($url);
     $table->out(25, false);
 
-    echo $OUTPUT->footer();
+    echo $output->footer();
     die();
 }
 
@@ -84,7 +93,7 @@ $txurl = new moodle_url($baseurl, ['view' => 'tx']);
 
 echo html_writer::start_div('d-flex flex-row justify-content-between');
 echo html_writer::start_div();
-echo $OUTPUT->heading(get_string('myongoingcredits', 'block_credits'), 3);
+echo $output->heading(get_string('myongoingcredits', 'block_credits'), 3);
 echo html_writer::end_div();
 echo html_writer::start_div();
 if ($manager->has_ever_had_any_credits($USER->id)) {
@@ -93,14 +102,25 @@ if ($manager->has_ever_had_any_credits($USER->id)) {
 echo html_writer::end_div();
 echo html_writer::end_div();
 
+$makemenucell = function ($bucket) use ($txurl, $output) {
+    $rowtxurl = new moodle_url($txurl, ['creditid' => $bucket->id]);
+    $menu = $output->make_dropdown_menu();
+    $menu->add(new action_menu_link_secondary($rowtxurl, null, get_string('transactions', 'block_credits')));
+    $menucell = new html_table_cell($output->render($menu));
+    $menucell->attributes['class'] .= 'p-1';
+    return $menucell;
+};
+
 if (!empty($availablebuckets)) {
     $table = new html_table();
+    $table->responsive = false;
     $table->head = [
         get_string("creditedon", 'block_credits'),
         get_string('total', 'block_credits'),
         get_string('used', 'block_credits'),
         get_string('available', 'block_credits'),
-        get_string('validuntil', 'block_credits')
+        get_string('validuntil', 'block_credits'),
+        ''
     ];
     foreach ($availablebuckets as $bucket) {
         $table->data[] = [
@@ -109,6 +129,7 @@ if (!empty($availablebuckets)) {
             $bucket->used,
             $bucket->remaining,
             userdate($bucket->validuntil, get_string('strftimedate', 'core_langconfig')),
+            $makemenucell($bucket)
         ];
     }
     echo html_writer::table($table);
@@ -118,14 +139,16 @@ if (!empty($availablebuckets)) {
 }
 
 if (!empty($unavailablebuckets)) {
-    echo $OUTPUT->heading(get_string('pastcredits', 'block_credits'), 3, ['class' => 'mt-3']);
+    echo $output->heading(get_string('pastcredits', 'block_credits'), 3, ['class' => 'mt-3']);
     $table = new html_table();
+    $table->responsive = false;
     $table->head = [
         get_string("creditedon", 'block_credits'),
         get_string('total', 'block_credits'),
         get_string('used', 'block_credits'),
         get_string('expired', 'block_credits'),
-        get_string('validuntil', 'block_credits')
+        get_string('validuntil', 'block_credits'),
+        ''
     ];
     foreach ($unavailablebuckets as $bucket) {
         $table->data[] = [
@@ -134,10 +157,11 @@ if (!empty($unavailablebuckets)) {
             $bucket->used,
             $bucket->expired,
             userdate($bucket->validuntil, get_string('strftimedate', 'core_langconfig')),
+            $makemenucell($bucket)
         ];
     }
     echo html_writer::table($table);
 }
 
-echo $OUTPUT->footer();
+echo $output->footer();
 

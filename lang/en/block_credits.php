@@ -99,6 +99,7 @@ $string['systemuser'] = 'System';
 $string['taskexpirecredits'] = 'Process expired credits';
 $string['total'] = 'Total';
 $string['transactions'] = 'Transactions';
+$string['transactionsfiltered'] = 'The transactions are filtered.';
 $string['transactionsfilteredforid'] = 'Transactions filtered for CID #{$a}';
 $string['used'] = 'Used';
 $string['usernotenrolledincurrentcourse'] = 'The user is not enrolled in current course.';
