@@ -1,5 +1,5 @@
 <?php
-// This file is part of a 3rd party created module for Moodle - http://moodle.org/
+// This file is part of Moodle - http://moodle.org/
 //
 // Moodle is free software: you can redistribute it and/or modify
 // it under the terms of the GNU General Public License as published by
@@ -15,19 +15,19 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Version.
+ * Message providers.
  *
  * @package    block_credits
- * @copyright  2023 Institut français du Japon
+ * @category   message
+ * @copyright  2024 Institut français du Japon
  * @author     Frédéric Massart <fred@branchup.tech>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version      = 2024072702;
-$plugin->requires     = 2023100900;   // Moodle 4.3.0.
-$plugin->component    = 'block_credits';
-$plugin->maturity     = MATURITY_STABLE;
-$plugin->release      = '1.1.3';
-$plugin->dependencies = [];
+$messageproviders = [
+    'expiredrefund' => [
+        'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_ENABLED,
+    ]
+];

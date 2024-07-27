@@ -29,8 +29,10 @@ use block_credits\local\note\note;
 use block_credits\local\reason\credits_reason;
 use block_credits\local\reason\reason;
 use context;
+use core\message\message;
 use core\uuid;
 use core_date;
+use core_user;
 use DateTimeImmutable;
 
 /**
@@ -449,6 +451,9 @@ class manager {
             throw new \coding_exception('No transactions found for operation ID');
         }
 
+        $refundedexpired = 0;
+        $refundedexpiringsoon = 0;
+
         $transaction = $DB->start_delegated_transaction();
         foreach ($operations as $op) {
             if ($op->amount >= 0) { // We don't revert credits that were added.
@@ -458,6 +463,7 @@ class manager {
             $amount = abs($op->amount);
             $bucket = $DB->get_record('block_credits', ['id' => $op->creditid], '*', MUST_EXIST);
             $isexpired = $bucket->validuntil < time();
+            $isexpiringsoon = $bucket->validuntil < (time() + WEEKSECS);
 
             // Cap to min and max in case the same operation is refunded more than once by accident.
             $bucket->used = max(0, $bucket->used - $amount);
@@ -482,19 +488,26 @@ class manager {
             ];
 
             if ($isexpired) {
-                $reason = new credits_reason('reasonrefundafterexpiry');
+                $expreason = new credits_reason('reasonrefundafterexpiry');
                 $txs[] = (object) [
                     'creditid' => $bucket->id,
                     'userid' => $userid,
                     'actinguserid' => $USER->id,
                     'amount' => -$amount,
-                    'component' => $reason->get_component(),
-                    'reasoncode' => $reason->get_code(),
-                    'reasonargs' => json_encode($reason->get_args()),
-                    'reasondesc' => static::get_static_reason_desc($reason),
+                    'component' => $expreason->get_component(),
+                    'reasoncode' => $expreason->get_code(),
+                    'reasonargs' => json_encode($expreason->get_args()),
+                    'reasondesc' => static::get_static_reason_desc($expreason),
                     'recordedon' => time(),
                     'privatenote' => "[System] Reverse TX {$op->id}.",
                 ];
+            }
+
+            // Capture the number of credits that we could not refund.
+            if ($isexpired) {
+                $refundedexpired += $amount;
+            } else if ($isexpiringsoon) {
+                $refundedexpiringsoon += $amount;
             }
 
             $DB->update_record('block_credits', $bucket);
@@ -503,9 +516,36 @@ class manager {
             }
         }
 
-        // TODO Send alert when refunding expired, or close to expiry.
-
         $DB->commit_delegated_transaction($transaction);
+
+        if ($refundedexpired || $refundedexpiringsoon) {
+            $url = new \moodle_url('/blocks/credits/manage_user.php', ['id' => $userid]);
+            $user = core_user::get_user($userid, '*', IGNORE_MISSING);
+            $content = markdown_to_html(get_string('messageexpiredrefund', 'block_credits', [
+                'fullname' => $user ? fullname($user) : '?',
+                'opid' => $operationid,
+                'reason' => static::get_static_reason_desc($reason),
+                'expired' => $refundedexpired,
+                'expiringsoon' => $refundedexpiringsoon,
+                'url' => $url->out(false),
+            ]));
+            $contentplain = html_to_text($content);
+
+            $managers = get_users_by_capability(\core\context\system::instance(), 'block/credits:receivemanagernotifications');
+            foreach ($managers as $manager) {
+                $message = new message();
+                $message->component = 'block_credits';
+                $message->name = 'expiredrefund';
+                $message->userfrom = core_user::get_noreply_user();
+                $message->userto = $manager;
+                $message->subject = get_string('messageexpiredrefundsubject', 'block_credits');
+                $message->fullmessage = $contentplain;
+                $message->fullmessageformat = FORMAT_PLAIN;
+                $message->fullmessagehtml = $content;
+                $message->notification = 1;
+                message_send($message);
+            }
+        }
     }
 
     /**
@@ -515,6 +555,7 @@ class manager {
      * @param int $quantity The quantity.
      * @param reason $reason The reason.
      * @param DateTimeImmutable|null $validasat The date at which credits were available.
+     * @deprecated Since 1.2.0, use refund_from_operation_id instead.
      */
     public function refund_user_credits($userid, $quantity, reason $reason, DateTimeImmutable $validasat = null) {
         global $DB, $USER;

@@ -6,7 +6,7 @@ Supports the management of user credits.
 Requirements
 ------------
 
-- Moodle 4.1
+- Moodle 4.3
 
 Installation
 ------------
@@ -16,6 +16,12 @@ Installation
 - Assign the `block/credits:manage` permission
 - Review the `block/credits:viewall` permission
 - Review the `block/credits:view` permission if used outside a course
+- Assign the `block/credits:receivemanagernotifications` permission at the system level
+
+Manager notifications
+---------------------
+
+To receive special manager notifications, users must be explicitly given the permission `block/credits:receivemanagernotifications` at the system context level. This also applies to admin users.
 
 Public API
 ----------

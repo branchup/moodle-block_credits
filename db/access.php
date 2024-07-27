@@ -43,6 +43,11 @@ $capabilities = [
         'contextlevel' => CONTEXT_COURSE,
         'archetypes' => [],
     ],
+    'block/credits:receivemanagernotifications' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_SYSTEM,
+        'archetypes' => [],
+    ],
     'block/credits:view' => [
         'captype' => 'view',
         'contextlevel' => CONTEXT_COURSE,

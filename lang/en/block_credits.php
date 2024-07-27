@@ -41,6 +41,7 @@ $string['creditedon'] = 'Credited on';
 $string['credits:addinstance'] = 'Add a new block';
 $string['credits:manage'] = 'Manage anybody\'s credits';
 $string['credits:myaddinstance'] = 'Add the block to my dashboard';
+$string['credits:receivemanagernotifications'] = 'Receive manager notifications.';
 $string['credits:view'] = 'View credits';
 $string['credits:viewall'] = 'View anybody\'s credits';
 $string['credits'] = 'Credits';
@@ -66,6 +67,17 @@ $string['importresults'] = 'Import results';
 $string['history'] = 'History';
 $string['label'] = 'Label';
 $string['manage'] = 'Manage';
+$string['messageexpiredrefund'] = 'You are receiving this email because some credits could not be refunded, or have been refunded but are expiring soon.
+
+- User: {$a->fullname}
+- Operation ID: {$a->opid}
+- Refund reason: {$a->reason}
+- Quantity refunded (expiring soon): {$a->expiringsoon}
+- Quantity non-refunded (expired): {$a->expired}
+
+To manage this person\'s credits, navigate to [this page]({$a->url}).';
+$string['messageexpiredrefundsubject'] = 'Expired (or expiring) credits after refund';
+$string['messageprovider:expiredrefund'] = 'Expired or expiring credits being refunded.';
 $string['mycredits'] = 'My credits';
 $string['myongoingcredits'] = 'My ongoing credits';
 $string['ncredits'] = '{$a} credit(s)';
