@@ -84,6 +84,10 @@ $string['messageexpirynotice'] = 'This is a courtesy email to remind you that so
 
 Please use your credits before they expire to avoid any losses, you may do so [on our website]({$a->wwwroot}).';
 $string['messageexpirynoticesubject'] = '{$a->credits} credits expire in less than {$a->days} days.';
+$string['messageexpirednotice'] = 'This is a notice to inform you that {$a->credits} of your credits have expired.
+
+Please visit [our website]({$a->wwwroot}) for more details about your credits.';
+$string['messageexpirednoticesubject'] = '{$a->credits} credits have expired.';
 $string['messageprovider:expiredrefund'] = 'Expired or expiring credits being refunded.';
 $string['messageprovider:expirynotice'] = 'Expiry notifications.';
 $string['mycredits'] = 'My credits';

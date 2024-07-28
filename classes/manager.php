@@ -357,6 +357,8 @@ class manager {
         $DB->insert_record('block_credits_tx', $tx);
 
         $DB->commit_delegated_transaction($transaction);
+
+        $this->send_expired_notice_for_bucket($bucket);
     }
 
     /**
@@ -753,6 +755,34 @@ class manager {
         $message->userfrom = core_user::get_support_user();
         $message->userto = $user;
         $message->subject = get_string('messageexpirynoticesubject', 'block_credits', $args);
+        $message->fullmessage = $contentplain;
+        $message->fullmessageformat = FORMAT_PLAIN;
+        $message->fullmessagehtml = $content;
+        $message->notification = 1;
+        message_send($message);
+    }
+
+    /**
+     * Send expired notice for a bucket.
+     *
+     * @param object $bucket The bucket as from the database.
+     */
+    protected function send_expired_notice_for_bucket($bucket) {
+        $user = core_user::get_user($bucket->userid, '*', MUST_EXIST);
+
+        $args = [
+            'credits' => $bucket->expired,
+            'wwwroot' => (new moodle_url('/'))->out(false),
+        ];
+        $content = markdown_to_html(get_string('messageexpirednotice', 'block_credits', $args));
+        $contentplain = html_to_text($content);
+
+        $message = new message();
+        $message->component = 'block_credits';
+        $message->name = 'expirynotice';
+        $message->userfrom = core_user::get_support_user();
+        $message->userto = $user;
+        $message->subject = get_string('messageexpirednoticesubject', 'block_credits', $args);
         $message->fullmessage = $contentplain;
         $message->fullmessageformat = FORMAT_PLAIN;
         $message->fullmessagehtml = $content;
