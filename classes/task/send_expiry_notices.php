@@ -14,34 +14,26 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+namespace block_credits\task;
+
+use block_credits\manager;
+use core\task\scheduled_task;
+
 /**
- * Tasks.
+ * Task.
  *
  * @package    block_credits
- * @copyright  2023 Institut français du Japon
+ * @copyright  2024 Institut français du Japon
  * @author     Frédéric Massart <fred@branchup.tech>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+class send_expiry_notices extends scheduled_task {
 
-defined('MOODLE_INTERNAL') || die();
+    public function get_name() {
+        return get_string('tasksendexpirynotices', 'block_credits');
+    }
 
-$tasks = [
-    [
-        'classname' => 'block_credits\task\expire_credits',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '0',
-        'day' => '*',
-        'dayofweek' => '*',
-        'month' => '*'
-    ],
-    [
-        'classname' => 'block_credits\task\send_expiry_notices',
-        'blocking' => 0,
-        'minute' => '0',
-        'hour' => '8',
-        'day' => '*',
-        'dayofweek' => '*',
-        'month' => '*'
-    ]
-];
+    public function execute() {
+        manager::instance()->send_expiry_notices();
+    }
+}

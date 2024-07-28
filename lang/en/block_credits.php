@@ -77,7 +77,15 @@ $string['messageexpiredrefund'] = 'You are receiving this email because some cre
 
 To manage this person\'s credits, navigate to [this page]({$a->url}).';
 $string['messageexpiredrefundsubject'] = 'Expired (or expiring) credits after refund';
+$string['messageexpirynotice'] = 'This is a courtesy email to remind you that some of your credits may expire if not used.
+
+- Credits: {$a->credits}
+- Expiry date: {$a->expirydate}
+
+Please use your credits before they expire to avoid any losses, you may do so [on our website]({$a->wwwroot}).';
+$string['messageexpirynoticesubject'] = '{$a->credits} credits expire in less than {$a->days} days.';
 $string['messageprovider:expiredrefund'] = 'Expired or expiring credits being refunded.';
+$string['messageprovider:expirynotice'] = 'Expiry notifications.';
 $string['mycredits'] = 'My credits';
 $string['myongoingcredits'] = 'My ongoing credits';
 $string['ncredits'] = '{$a} credit(s)';
@@ -95,6 +103,7 @@ $string['publicnote'] = 'Public note';
 $string['purchase'] = 'Purchase';
 $string['reason'] = 'Reason';
 $string['reasonexpired'] = 'Credits expired.';
+$string['reasonexpirynoticesent'] = 'Upcoming expiry notice sent ({$a->credits} on {$a->expiry}).';
 $string['reasonextended'] = 'Credit validity changed from {$a->from} to {$a->to}.';
 $string['reasonimported'] = 'Credits imported by administrator.';
 $string['reasonother'] = 'Credit update.';
@@ -109,6 +118,7 @@ $string['removefilter'] = 'Remove filter';
 $string['soonestexpiry'] = 'Soonest expiry';
 $string['systemuser'] = 'System';
 $string['taskexpirecredits'] = 'Process expired credits';
+$string['tasksendexpirynotices'] = 'Send expiry notices';
 $string['total'] = 'Total';
 $string['transactions'] = 'Transactions';
 $string['transactionsfiltered'] = 'The transactions are filtered.';
@@ -116,6 +126,7 @@ $string['transactionsfilteredforid'] = 'Transactions filtered for CID #{$a}';
 $string['used'] = 'Used';
 $string['usernotenrolledincurrentcourse'] = 'The user is not enrolled in current course.';
 $string['userscredits'] = 'Users\' credits';
+$string['validuntilchangenote'] = 'Please note that changing the validity will reset previously sent expiry notices.';
 $string['valuecannotbelessthan'] = 'The value cannot be less than {$a}.';
 $string['validuntil'] = 'Valid until';
 $string['viewall'] = 'View all';

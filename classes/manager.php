@@ -31,9 +31,11 @@ use block_credits\local\reason\reason;
 use context;
 use core\message\message;
 use core\uuid;
+use core_collator;
 use core_date;
 use core_user;
 use DateTimeImmutable;
+use moodle_url;
 
 /**
  * Manager.
@@ -197,6 +199,7 @@ class manager {
 
         $prevvaliduntil = new DateTimeImmutable('@' . $bucket->validuntil);
         $bucket->validuntil = $validuntil->getTimestamp();
+        $bucket->expirynoticestage = null; // Reset the notices sent.
         $DB->update_record('block_credits', $bucket);
 
         $reason = new credits_reason('reasonextended', [
@@ -650,6 +653,111 @@ class manager {
         }
 
         $DB->commit_delegated_transaction($transaction);
+    }
+
+    /**
+     * Send the expiry notices.
+     *
+     * @return void
+     */
+    public function send_expiry_notices() {
+        global $DB, $USER;
+
+        $now = time();
+        $stages = [
+            (object) [
+                'stage' => 7,
+                'threshold' => $now + 7 * DAYSECS,
+            ],
+            (object) [
+                'stage' => 30,
+                'threshold' => $now + 30 * DAYSECS,
+            ],
+            (object) [
+                'stage' => 90,
+                'threshold' => $now + 90 * DAYSECS,
+            ],
+        ];
+
+        // Fetch the buckets that are expiring before the threshold time, but have not expired yet.
+        // Of course, those buckets must containing remaining credits, and we also must not have sent
+        // a notice for this stage yet.
+        core_collator::asort_objects_by_property($stages, 'threshold', core_collator::SORT_NUMERIC);
+        foreach ($stages as $stage) {
+            $sql = 'validuntil < :threshold
+                AND validuntil > :now
+                AND remaining > 0
+                AND (expirynoticestage > :stage OR expirynoticestage IS NULL)';
+            $records = $DB->get_records_select('block_credits', $sql, [
+                'now' => time(),
+                'stage' => $stage->stage,
+                'threshold' => $stage->threshold,
+            ]);
+
+            foreach ($records as $bucket) {
+                try {
+                    $this->send_expiry_notice_for_bucket($bucket);
+                } catch (\moodle_exception $e) {
+                    debugging("An error occurred while sending the expiry for bucket {$bucket->id}.");
+                    continue;
+                }
+
+                // Update the bucket to save the stage.
+                $bucket->expirynoticestage = $stage->stage;
+                $DB->update_record('block_credits', $bucket);
+
+                // Record notice sent.
+                $validuntil = new DateTimeImmutable('@' . $bucket->validuntil);
+                $reason = new credits_reason('reasonexpirynoticesent', [
+                    'credits' => $bucket->remaining,
+                    'expiry' => $validuntil->setTimezone(core_date::get_server_timezone_object())->format('Y-m-d'),
+                ]);
+                $tx = (object) [
+                    'creditid' => $bucket->id,
+                    'userid' => $bucket->userid,
+                    'actinguserid' => $USER->id,
+                    'amount' => 0,
+                    'component' => $reason->get_component(),
+                    'reasoncode' => $reason->get_code(),
+                    'reasonargs' => json_encode($reason->get_args()),
+                    'reasondesc' => static::get_static_reason_desc($reason),
+                    'recordedon' => time(),
+                ];
+                $DB->insert_record('block_credits_tx', $tx);
+            }
+        }
+    }
+
+    /**
+     * Send an expiry notice for a bucket.
+     *
+     * @param object $bucket The bucket as from the database.
+     */
+    protected function send_expiry_notice_for_bucket($bucket) {
+        $user = core_user::get_user($bucket->userid, '*', MUST_EXIST);
+
+        $days = max(1, ceil(($bucket->validuntil - time()) / DAYSECS));
+        $args = [
+            'credits' => $bucket->remaining,
+            'expirydate' => userdate($bucket->validuntil, get_string('strftimedate', 'core_langconfig'),
+                core_date::get_user_timezone($user)),
+            'wwwroot' => (new moodle_url('/'))->out(false),
+            'days' => $days,
+        ];
+        $content = markdown_to_html(get_string('messageexpirynotice', 'block_credits', $args));
+        $contentplain = html_to_text($content);
+
+        $message = new message();
+        $message->component = 'block_credits';
+        $message->name = 'expirynotice';
+        $message->userfrom = core_user::get_support_user();
+        $message->userto = $user;
+        $message->subject = get_string('messageexpirynoticesubject', 'block_credits', $args);
+        $message->fullmessage = $contentplain;
+        $message->fullmessageformat = FORMAT_PLAIN;
+        $message->fullmessagehtml = $content;
+        $message->notification = 1;
+        message_send($message);
     }
 
     /**

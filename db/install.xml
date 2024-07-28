@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="blocks/credits/db" VERSION="20231020" COMMENT="XMLDB file for Moodle blocks/credits"
+<XMLDB PATH="blocks/credits/db" VERSION="20240728" COMMENT="XMLDB file for Moodle blocks/credits"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -14,11 +14,15 @@
         <FIELD NAME="expired" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false" COMMENT="The number of credits expired."/>
         <FIELD NAME="creditedon" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The UNIX timestamp at which the credits were credited."/>
         <FIELD NAME="validuntil" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="The UNIX timestamp until which credits are valid for."/>
+        <FIELD NAME="expirynoticestage" TYPE="int" LENGTH="2" NOTNULL="false" SEQUENCE="false" COMMENT="The &quot;stage&quot; of notice we are in, or null when in none. The higher number, the earlier the notice."/>
       </FIELDS>
       <KEYS>
         <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
         <KEY NAME="userid" TYPE="foreign" FIELDS="userid" REFTABLE="user" REFFIELDS="id"/>
       </KEYS>
+      <INDEXES>
+        <INDEX NAME="remainvalid" UNIQUE="false" FIELDS="remaining, validuntil"/>
+      </INDEXES>
     </TABLE>
     <TABLE NAME="block_credits_tx" COMMENT="History of all transactions of a person's credits.">
       <FIELDS>

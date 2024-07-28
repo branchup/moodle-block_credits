@@ -61,11 +61,14 @@ class change_validity_dynamic_form extends dynamic_form {
         $mform->addElement('date_selector', 'validuntil', get_string('validuntil', 'block_credits'));
         $mform->setDefault('validuntil', (new DateTimeImmutable('@' . $this->get_bucket()->validuntil))->getTimestamp());
 
+        $mform->addElement('static', 'expirystagenotice', '', get_string('validuntilchangenote', 'block_credits'));
+
         $mform->addElement('textarea', 'publicnote', get_string('publicnote', 'block_credits'), ['maxlength' => 255]);
         $mform->setType('publicnote', PARAM_RAW);
 
         $mform->addElement('textarea', 'privatenote', get_string('privatenote', 'block_credits'), ['maxlength' => 255]);
         $mform->setType('privatenote', PARAM_RAW);
+
     }
 
     /**

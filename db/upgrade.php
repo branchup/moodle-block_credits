@@ -64,5 +64,35 @@ function xmldb_block_credits_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2023102001, 'credits');
     }
 
+    if ($oldversion < 2024072703) {
+
+        // Define field expirynoticestage to be added to block_credits.
+        $table = new xmldb_table('block_credits');
+        $field = new xmldb_field('expirynoticestage', XMLDB_TYPE_INTEGER, '2', null, null, null, null, 'validuntil');
+
+        // Conditionally launch add field expirynoticestage.
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+
+        // Credits savepoint reached.
+        upgrade_block_savepoint(true, 2024072703, 'credits');
+    }
+
+    if ($oldversion < 2024072704) {
+
+        // Define index remainvalid (not unique) to be added to block_credits.
+        $table = new xmldb_table('block_credits');
+        $index = new xmldb_index('remainvalid', XMLDB_INDEX_NOTUNIQUE, ['remaining', 'validuntil']);
+
+        // Conditionally launch add index remainvalid.
+        if (!$dbman->index_exists($table, $index)) {
+            $dbman->add_index($table, $index);
+        }
+
+        // Credits savepoint reached.
+        upgrade_block_savepoint(true, 2024072704, 'credits');
+    }
+
     return true;
 }
