@@ -25,9 +25,9 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version      = 2024072800;
+$plugin->version      = 2024090300;
 $plugin->requires     = 2023100900;   // Moodle 4.3.0.
 $plugin->component    = 'block_credits';
 $plugin->maturity     = MATURITY_STABLE;
-$plugin->release      = '1.2.0';
+$plugin->release      = '1.2.1';
 $plugin->dependencies = [];
