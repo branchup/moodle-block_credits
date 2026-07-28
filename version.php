@@ -25,10 +25,10 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->version      = 2024090300;
+$plugin->version      = 2026072800;
 $plugin->requires     = 2025041400;   // Moodle 5.0.0.
 $plugin->component    = 'block_credits';
 $plugin->maturity     = MATURITY_STABLE;
-$plugin->release      = '1.2.1';
+$plugin->release      = '1.2.2';
 $plugin->dependencies = [];
 $plugin->supported    = [500, 502];
