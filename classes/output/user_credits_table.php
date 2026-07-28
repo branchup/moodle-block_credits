@@ -90,11 +90,11 @@ class user_credits_table extends \table_sql {
 
     public function col_status($row) {
         if ($row->validuntil <= time()) {
-            return '<span class="badge badge-dark">' . get_string('expired', 'block_credits') . '</span>';
+            return '<span class="badge bg-dark">' . get_string('expired', 'block_credits') . '</span>';
         } else if (!$row->remaining) {
-            return '<span class="badge badge-secondary">' . get_string('used', 'block_credits') . '</span>';
+            return '<span class="badge bg-secondary">' . get_string('used', 'block_credits') . '</span>';
         }
-        return '<span class="badge badge-success">' . get_string('available', 'block_credits') . '</span>';
+        return '<span class="badge bg-success">' . get_string('available', 'block_credits') . '</span>';
     }
 
     public function col_actions($row) {

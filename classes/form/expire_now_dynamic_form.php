@@ -31,6 +31,7 @@ use block_credits\manager;
 use context;
 use core_form\dynamic_form;
 use moodle_url;
+use stdClass;
 
 /**
  * Form.

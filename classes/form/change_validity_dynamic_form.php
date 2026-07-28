@@ -32,6 +32,7 @@ use core_date;
 use core_form\dynamic_form;
 use DateTimeImmutable;
 use moodle_url;
+use stdClass;
 
 /**
  * Form.

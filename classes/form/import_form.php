@@ -33,6 +33,7 @@ require_once($CFG->libdir . '/formslib.php');
 use core_text;
 use csv_import_reader;
 use moodleform;
+use stdClass;
 
 /**
  * Import.

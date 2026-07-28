@@ -28,7 +28,6 @@ namespace block_credits;
 use block_credits\local\note\note;
 use block_credits\local\reason\credits_reason;
 use block_credits\local\reason\reason;
-use context;
 use core\message\message;
 use core\uuid;
 use core_collator;
@@ -137,7 +136,7 @@ class manager {
      * @param int $newtotal The new total.
      * @param note|null $note The note.
      */
-    public function adjust_bucket_total($bucketid, $newtotal, note $note = null) {
+    public function adjust_bucket_total($bucketid, $newtotal, ?note $note = null) {
         global $DB, $USER;
 
         $bucket = $DB->get_record('block_credits', ['id' => $bucketid], '*', MUST_EXIST);
@@ -187,7 +186,7 @@ class manager {
      * @param DateTimeImmutable $validuntil The date.
      * @param note|null $note The note.
      */
-    public function change_bucket_validity($bucketid, DateTimeImmutable $validuntil, note $note = null) {
+    public function change_bucket_validity($bucketid, DateTimeImmutable $validuntil, ?note $note = null) {
         global $DB, $USER;
 
         $bucket = $DB->get_record('block_credits', ['id' => $bucketid], '*', MUST_EXIST);
@@ -288,7 +287,7 @@ class manager {
      * @param reason $reason The reason.
      * @param note|null $note The note.
      */
-    public function credit_user($userid, $amount, DateTimeImmutable $validuntil, reason $reason, note $note = null) {
+    public function credit_user($userid, $amount, DateTimeImmutable $validuntil, reason $reason, ?note $note = null) {
         global $DB, $USER;
 
         $transaction = $DB->start_delegated_transaction();
@@ -327,7 +326,7 @@ class manager {
      * @param reason $reason The reason.
      * @param note|null $note The note.
      */
-    public function expire_credit_bucket($bucket, reason $reason, note $note = null) {
+    public function expire_credit_bucket($bucket, reason $reason, ?note $note = null) {
         global $DB, $USER;
         if ($bucket->remaining <= 0) {
             throw new \coding_exception('No credits to expire');
@@ -365,10 +364,10 @@ class manager {
      * Get the number of available credits at time.
      *
      * @param int $userid The user ID.
-     * @param \DateTimeImmutable $dt The time.
+     * @param DateTimeImmutable $dt The time.
      * @return int
      */
-    public function get_available_credits_at_time($userid, \DateTimeImmutable $dt) {
+    public function get_available_credits_at_time($userid, DateTimeImmutable $dt) {
         global $DB;
         return (int) $DB->get_field_select('block_credits', 'COALESCE(SUM(remaining), 0)', 'userid = ? AND validuntil >= ?',
             [$userid, $dt->getTimestamp()]);
@@ -378,10 +377,10 @@ class manager {
      * Get the credits buckets expiring before a date.
      *
      * @param int $userid The user ID.
-     * @param \DateTimeImmutable $dt The time.
+     * @param DateTimeImmutable $dt The time.
      * @return object[]
      */
-    public function get_buckets_expiring_before($userid, \DateTimeImmutable $dt) {
+    public function get_buckets_expiring_before($userid, DateTimeImmutable $dt) {
         global $DB;
         return $DB->get_records_select('block_credits', 'remaining > 0 AND userid = ? AND validuntil <= ?',
             [$userid, $dt->getTimestamp()], 'validuntil ASC');
@@ -393,10 +392,10 @@ class manager {
      * This returns the buckets sorted by closest validity to farthest.
      *
      * @param int $userid The user ID.
-     * @param \DateTimeImmutable $dt The time at which the buckets must available.
+     * @param DateTimeImmutable $dt The time at which the buckets must available.
      * @return object[]
      */
-    public function get_buckets_available($userid, \DateTimeImmutable $dt = null) {
+    public function get_buckets_available($userid, ?DateTimeImmutable $dt = null) {
         global $DB;
         $validuntil = $dt ? $dt->getTimestamp() : time();
         return $DB->get_records_select('block_credits', 'remaining > 0 AND userid = ? AND validuntil >= ?',
@@ -562,7 +561,7 @@ class manager {
      * @param DateTimeImmutable|null $validasat The date at which credits were available.
      * @deprecated Since 1.2.0, use refund_from_operation_id instead.
      */
-    public function refund_user_credits($userid, $quantity, reason $reason, DateTimeImmutable $validasat = null) {
+    public function refund_user_credits($userid, $quantity, reason $reason, ?DateTimeImmutable $validasat = null) {
         global $DB, $USER;
 
         if ($quantity <= 0) {
@@ -799,7 +798,7 @@ class manager {
      * @param DateTimeImmutable|null $validasat The date at which credits must be available.
      * @return string The operation ID.
      */
-    public function spend_user_credits($userid, $quantity, reason $reason, DateTimeImmutable $validasat = null) {
+    public function spend_user_credits($userid, $quantity, reason $reason, ?DateTimeImmutable $validasat = null) {
         global $DB, $USER;
 
         if ($quantity <= 0) {

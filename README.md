@@ -6,7 +6,7 @@ Supports the management of user credits.
 Requirements
 ------------
 
-- Moodle 4.3
+- Moodle 5.0-5.2
 
 Installation
 ------------

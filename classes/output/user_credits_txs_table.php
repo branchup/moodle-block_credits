@@ -146,12 +146,17 @@ class user_credits_txs_table extends \table_sql {
             return '-';
         }
         return html_writer::tag('button', $OUTPUT->render_from_template('block_credits/icon-note', []), [
-            'class' => 'btn btn-link p-0 text-left text-body',
+            'class' => 'btn btn-link p-0 text-start text-body',
             'data-container' => 'body',
+            'data-bs-container' => 'body',
             'data-toggle' => 'popover',
+            'data-bs-toggle' => 'popover',
             'data-content' => nl2br(s($row->privatenote)),
+            'data-bs-content' => nl2br(s($row->privatenote)),
             'data-placement' => 'left',
-            'data-html' => 'true'
+            'data-bs-placement' => 'left',
+            'data-html' => 'true',
+            'data-bs-html' => 'true'
         ]);
     }
 
